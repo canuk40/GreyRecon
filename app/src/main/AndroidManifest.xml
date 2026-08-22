@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Discovery: ARP/active scan + mDNS/UPnP (multicast) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <!-- Required by Android to read WiFi scan results (SSID/BSSID), not for tracking -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <!-- BLE discovery. Legacy permissions capped at maxSdkVersion 30 for devices still on that
+         legacy permission model (minSdk is 26); targetSdk 36 means BLUETOOTH_SCAN is the real
+         runtime-requested permission on API 31+ (see BleScanScreen.kt). Deliberately not requesting
+         BLUETOOTH_CONNECT: BleScanner.kt guards its one CONNECT-gated call (BluetoothDevice.getName())
+         instead of asking for a permission this passive-scan feature doesn't otherwise need. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <!-- AI provider calls (BYOK) + Shodan lookups -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Play Billing (GreyRecon Pro) -->
+    <uses-permission android:name="com.android.vending.BILLING"/>
+    <!-- MCP server foreground service (Pro): keeps answering nanobot's requests while backgrounded.
+         connectedDevice, not dataSync: see McpService.kt for why. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <!-- Required on Android 13+ to show the foreground service's own status notification -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <application
+        android:name=".GreyReconApplication"
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.GreyRecon"
+        android:icon="@mipmap/ic_launcher"
+        android:supportsRtl="true">
+
+        <activity
+            android:name=".ui.main.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.GreyRecon">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".mcp.McpService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"/>
+
+        <!-- Export scan results (CSV/JSON) to the system share sheet without needing storage permission -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+
+    </application>
+</manifest>

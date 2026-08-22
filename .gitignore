@@ -1,0 +1,28 @@
+# Signing -- never commit. Losing this file is one thing; leaking it is worse (anyone with it
+# can sign malicious updates as this app). See GreyRecon.md SESSION 23 for how it was generated.
+keystore/
+
+# Firebase config -- excluded by default out of caution even though Google considers the API key
+# in this file non-sensitive (restricted by package name + SHA-1, not a bearer secret). Re-add
+# explicitly if full transparency is preferred over this default.
+app/google-services.json
+
+# Local machine config, not portable
+local.properties
+
+# Build outputs / caches
+*.iml
+.idea/
+.gradle/
+.kotlin/
+build/
+app/build/
+terminal-emulator/build/
+terminal-view/build/
+.cxx/
+*.apk
+*.aab
+
+# OS cruft
+.DS_Store
+Thumbs.db
