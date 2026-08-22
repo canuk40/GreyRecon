@@ -1,0 +1,439 @@
+<title>GreyRecon Privacy Policy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f6f8f6;
+    --surface: #ffffff;
+    --surface-2: #eef2ef;
+    --border: #dbe4de;
+    --text: #12201a;
+    --text-muted: #52685e;
+    --accent: #0f9d70;
+    --accent-strong: #0b7a58;
+    --accent-soft: #e2f5ec;
+    --mono-chip-bg: #eef2ef;
+    --mono-chip-text: #1c352b;
+    --danger: #b4553e;
+    --danger-soft: #fbeae5;
+    --shadow: 0 1px 2px rgba(18,32,26,0.04), 0 8px 24px rgba(18,32,26,0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a0f0d;
+      --surface: #101713;
+      --surface-2: #141d18;
+      --border: #22322a;
+      --text: #e9f2ec;
+      --text-muted: #92a89c;
+      --accent: #4fe0a8;
+      --accent-strong: #7bedbe;
+      --accent-soft: #16302436;
+      --mono-chip-bg: #142a21;
+      --mono-chip-text: #a9f0cf;
+      --danger: #e29280;
+      --danger-soft: #2c1a16;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0f0d;
+    --surface: #101713;
+    --surface-2: #141d18;
+    --border: #22322a;
+    --text: #e9f2ec;
+    --text-muted: #92a89c;
+    --accent: #4fe0a8;
+    --accent-strong: #7bedbe;
+    --accent-soft: #16302436;
+    --mono-chip-bg: #142a21;
+    --mono-chip-text: #a9f0cf;
+    --danger: #e29280;
+    --danger-soft: #2c1a16;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    padding: 14px clamp(16px, 4vw, 40px);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .brand svg { flex: none; }
+  .brand-name { font-size: 1rem; }
+  .brand-tag { color: var(--text-muted); font-size: 0.8rem; font-weight: 400; display: none; }
+  @media (min-width: 560px) { .brand-tag { display: inline; } }
+  .eff-date {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .layout {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 40px) 100px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  @media (min-width: 920px) {
+    .layout { grid-template-columns: 230px minmax(0, 720px); align-items: start; }
+  }
+
+  nav.toc {
+    position: sticky;
+    top: 76px;
+    display: none;
+    font-size: 0.84rem;
+  }
+  @media (min-width: 920px) { nav.toc { display: block; } }
+  nav.toc .toc-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 10px 0;
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  nav.toc a {
+    display: flex; gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border-left: 2px solid transparent;
+  }
+  nav.toc a:hover { color: var(--text); background: var(--surface-2); }
+  nav.toc a .n { font-family: "IBM Plex Mono", monospace; color: var(--accent-strong); font-size: 0.78em; flex: none; width: 1.4em; }
+
+  header.hero {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  header.hero h1 {
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    margin: 0 0 10px 0;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  header.hero .lede {
+    max-width: 62ch;
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    margin: 0 0 18px 0;
+  }
+  .fact-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .fact {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.74rem;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  }
+  .fact.neutral { background: var(--surface-2); color: var(--text-muted); border-color: var(--border); }
+
+  main { min-width: 0; }
+
+  section.policy-section {
+    scroll-margin-top: 84px;
+    padding: 30px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  section.policy-section:last-of-type { border-bottom: none; }
+  section.policy-section h2 {
+    display: flex; align-items: baseline; gap: 12px;
+    font-size: 1.28rem;
+    margin: 0 0 14px 0;
+    text-wrap: balance;
+  }
+  section.policy-section h2 .idx {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--accent-strong);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  section.policy-section h3 {
+    font-size: 0.98rem;
+    margin: 22px 0 8px 0;
+    color: var(--text);
+  }
+  section.policy-section p { margin: 0 0 12px 0; max-width: 68ch; }
+  section.policy-section ul, section.policy-section ol.lettered { margin: 0 0 12px 0; padding-left: 1.25em; max-width: 68ch; }
+  section.policy-section li { margin-bottom: 6px; }
+  code {
+    font-family: "IBM Plex Mono", monospace;
+    background: var(--mono-chip-bg);
+    color: var(--mono-chip-text);
+    padding: 0.12em 0.4em;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0 18px 0;
+    font-size: 0.9rem;
+  }
+  .data-table th, .data-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .data-table th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .data-table td.perm { font-family: "IBM Plex Mono", monospace; font-size: 0.82rem; color: var(--accent-strong); white-space: nowrap; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); margin-bottom: 18px; }
+  .table-wrap .data-table { margin: 0; }
+  .table-wrap .data-table th:first-child, .table-wrap .data-table td:first-child { padding-left: 16px; }
+
+  .stripe {
+    display: flex; gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    margin: 4px 0 18px 0;
+  }
+  .stripe .mark { flex: none; width: 3px; border-radius: 3px; background: var(--accent); }
+  .stripe.warn .mark { background: var(--danger); }
+  .stripe p { margin: 0; max-width: none; }
+  .stripe strong { color: var(--text); }
+
+  .card-grid { display: grid; gap: 12px; grid-template-columns: 1fr; margin: 6px 0 18px 0; }
+  @media (min-width: 620px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+  .card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h4 {
+    margin: 0 0 6px 0;
+    font-size: 0.88rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h4 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+  .card p { margin: 0; font-size: 0.86rem; color: var(--text-muted); max-width: none; }
+
+  footer.policy-footer {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.84rem;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  footer.policy-footer .mono { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; }
+
+  ::selection { background: var(--accent); color: #06140f; }
+</style>
+
+<div class="topbar">
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9.5" stroke="var(--accent)" stroke-width="1.6"/>
+      <circle cx="12" cy="12" r="5.5" stroke="var(--accent)" stroke-width="1.6"/>
+      <circle cx="12" cy="12" r="1.8" fill="var(--accent)"/>
+    </svg>
+    <span class="brand-name">GreyRecon</span>
+    <span class="brand-tag">Privacy Policy</span>
+  </div>
+  <span class="eff-date">Effective 21 Aug 2026</span>
+</div>
+
+<div class="layout">
+  <header class="hero">
+    <h1>How GreyRecon handles your data</h1>
+    <p class="lede">GreyRecon is a network recon &amp; security toolkit for auditing the WiFi network you're already on. This page explains, plainly, what stays on your device, what you can choose to send elsewhere, and what a small set of Google services collect to help us fix crashes.</p>
+    <div class="fact-row">
+      <span class="fact">No account required</span>
+      <span class="fact">No ads, ever</span>
+      <span class="fact">Scan data stays on-device</span>
+      <span class="fact neutral">Optional third-party lookups (BYOK)</span>
+      <span class="fact neutral">Crash reporting via Firebase</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Table of contents">
+    <p class="toc-label">On this page</p>
+    <ol>
+      <li><a href="#overview"><span class="n">01</span>Overview</a></li>
+      <li><a href="#local-data"><span class="n">02</span>Data kept on your device</a></li>
+      <li><a href="#permissions"><span class="n">03</span>Permissions &amp; why</a></li>
+      <li><a href="#byok"><span class="n">04</span>Lookups you trigger yourself</a></li>
+      <li><a href="#crash"><span class="n">05</span>Crash &amp; diagnostics data</a></li>
+      <li><a href="#keys"><span class="n">06</span>API keys &amp; encryption</a></li>
+      <li><a href="#pro"><span class="n">07</span>GreyRecon Pro &amp; billing</a></li>
+      <li><a href="#mcp"><span class="n">08</span>MCP server (Pro)</a></li>
+      <li><a href="#retention"><span class="n">09</span>Retention &amp; deletion</a></li>
+      <li><a href="#children"><span class="n">10</span>Children's privacy</a></li>
+      <li><a href="#changes"><span class="n">11</span>Changes to this policy</a></li>
+      <li><a href="#contact"><span class="n">12</span>Contact</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section class="policy-section" id="overview">
+      <h2><span class="idx">01</span>Overview</h2>
+      <p>GreyRecon ("the app", "we", "GreyRecon") is developed as a single-developer, no-backend Android app. There is no GreyRecon server sitting between you and your network — the app talks directly to your router, the devices on your WiFi, and (only when you choose to use a specific feature) a small number of third-party APIs using your own credentials.</p>
+      <p>This policy covers every place data can possibly go when you use GreyRecon. Where a section doesn't apply to how you use the app — for example, you never enter a Shodan key — that section simply doesn't apply to you.</p>
+    </section>
+
+    <section class="policy-section" id="local-data">
+      <h2><span class="idx">02</span>Data kept on your device</h2>
+      <p>The core of GreyRecon — scanning your WiFi network, classifying devices, running tools like the subnet calculator or DNS lookup — never leaves your phone. Specifically, the following is stored only in the app's private local storage (a local database and encrypted preferences), and is never transmitted to us, because we have nowhere to receive it:</p>
+      <ul>
+        <li>Discovered devices: IP/MAC addresses, hostnames, open ports, vendor and device-type classification, and any custom name you give a device.</li>
+        <li>Device history and timeline: when a device was first/last seen, IP changes over time, new-device alerts.</li>
+        <li>Scan exports you generate (CSV / JSON / Nmap XML) — these are written to a file and handed to Android's own share sheet only when you tap Export; GreyRecon doesn't upload them anywhere itself.</li>
+        <li>Settings: your chosen AI provider, whether the MCP server is enabled, and similar preferences.</li>
+      </ul>
+      <div class="stripe">
+        <div class="mark"></div>
+        <p><strong>Uninstalling the app deletes all of this.</strong> There's no cloud copy to also delete, because none was ever made.</p>
+      </div>
+    </section>
+
+    <section class="policy-section" id="permissions">
+      <h2><span class="idx">03</span>Permissions &amp; why</h2>
+      <p>Every permission GreyRecon requests exists to make a specific feature work — none are used to build an advertising profile of you.</p>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Permission</th><th>What it's for</th></tr></thead>
+          <tbody>
+            <tr><td class="perm">ACCESS_FINE_LOCATION</td><td>Required by Android itself to read WiFi scan results (SSID/BSSID) and to run Bluetooth Low Energy scans. GreyRecon does not use this to track your physical location, and no location data is ever transmitted anywhere.</td></tr>
+            <tr><td class="perm">ACCESS_WIFI_STATE / ACCESS_NETWORK_STATE</td><td>Reads your current network's subnet so the app knows what range to scan.</td></tr>
+            <tr><td class="perm">CHANGE_WIFI_MULTICAST_STATE</td><td>Lets the app listen for mDNS/UPnP broadcasts other devices on your network send out (part of discovery), and lets the MCP foreground service (Pro) maintain its local network connection.</td></tr>
+            <tr><td class="perm">BLUETOOTH_SCAN</td><td>Lets the optional BLE Scan tool detect nearby Bluetooth Low Energy devices (earbuds, wearables, beacons). Scan results stay on-device.</td></tr>
+            <tr><td class="perm">POST_NOTIFICATIONS</td><td>Shows the ongoing "MCP server running" notification (Pro), and optional new-device alerts.</td></tr>
+            <tr><td class="perm">FOREGROUND_SERVICE / FOREGROUND_SERVICE_CONNECTED_DEVICE</td><td>Keeps the optional MCP server (Pro) answering requests from your own self-hosted client while the app is backgrounded.</td></tr>
+            <tr><td class="perm">INTERNET</td><td>Needed for every feature described in the next two sections — third-party lookups you trigger, and crash reporting.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="policy-section" id="byok">
+      <h2><span class="idx">04</span>Lookups you trigger yourself (bring your own key)</h2>
+      <p>Several features are opt-in and require <em>your own</em> API key, entered by you in Settings. GreyRecon never ships with, or shares, its own key for these — you're talking directly to that provider, using your account, under their privacy policy.</p>
+      <div class="card-grid">
+        <div class="card">
+          <h4><span class="dot"></span>Shodan</h4>
+          <p>Tapping "Check Shodan" on a device sends that device's public IP to Shodan's API, using your key. Only triggered on your action.</p>
+        </div>
+        <div class="card">
+          <h4><span class="dot"></span>AI provider (DeepSeek / Anthropic)</h4>
+          <p>Tapping "Ask AI" sends the relevant scan data (ports, vendor, etc.) and your question to your configured provider, using your key.</p>
+        </div>
+        <div class="card">
+          <h4><span class="dot"></span>NVD (CVE database)</h4>
+          <p>"Check NVD" sends a product/version string to the National Vulnerability Database's public API to look up known CVEs. No personal data involved.</p>
+        </div>
+        <div class="card">
+          <h4><span class="dot"></span>Terminal &amp; bundled CLI tools</h4>
+          <p>The terminal and tools like subfinder/dnsx/amass only make network requests when you type a command. Nothing runs or phones home in the background.</p>
+        </div>
+      </div>
+      <p>None of these keys, or the data sent alongside them, pass through any GreyRecon-owned server — there isn't one.</p>
+    </section>
+
+    <section class="policy-section" id="crash">
+      <h2><span class="idx">05</span>Crash &amp; diagnostics data</h2>
+      <p>GreyRecon uses <strong>Firebase Crashlytics</strong> and <strong>Firebase Analytics</strong> (Google) to help us find and fix bugs. This is the one place data leaves your device by default, rather than only when you take an action.</p>
+      <ul>
+        <li><strong>When the app crashes</strong>, Crashlytics sends Google a crash log: the stack trace, device model, OS version, app version, and free memory/storage at the time — enough to reproduce and fix the bug, not to identify you personally.</li>
+        <li><strong>Firebase Analytics</strong> collects basic app-usage signals (app opens, screens viewed, session length) and device/OS information, following Google's standard Firebase SDK behavior.</li>
+      </ul>
+      <div class="stripe">
+        <div class="mark"></div>
+        <p>This data is processed by Google under <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase's own privacy terms</a>. GreyRecon does not use it for advertising, does not sell it, and the app itself carries no ad SDKs.</p>
+      </div>
+    </section>
+
+    <section class="policy-section" id="keys">
+      <h2><span class="idx">06</span>API keys &amp; encryption</h2>
+      <p>Any API key you enter (DeepSeek, Anthropic, Shodan, NVD) is stored using Android's <code>EncryptedSharedPreferences</code> — AES-256 encryption tied to your device's own hardware-backed keystore. Keys never leave your device except as part of the specific, user-triggered request described in Section 4, sent straight to that provider's own API — GreyRecon itself never sees, logs, or stores a copy anywhere else.</p>
+    </section>
+
+    <section class="policy-section" id="pro">
+      <h2><span class="idx">07</span>GreyRecon Pro &amp; billing</h2>
+      <p>GreyRecon Pro (a one-time unlock for Device History, Tools, Terminal, and the MCP server) is sold and processed entirely through Google Play Billing. GreyRecon does not receive or store your payment details — Google handles the transaction, and the app only ever asks Google Play "is this purchase active?" to decide whether to unlock those features.</p>
+    </section>
+
+    <section class="policy-section" id="mcp">
+      <h2><span class="idx">08</span>MCP server (Pro feature)</h2>
+      <p>If you enable the optional MCP server, it starts a small HTTP server listening on your local network only (not the public internet), protected by a random token you configure your own client (e.g. a self-hosted nanobot instance) with. Anyone who has both your local network access and that token can query your scan data or trigger a scan — this is the same trust model as any self-hosted local server, and is why the in-app screen tells you to keep the token private.</p>
+    </section>
+
+    <section class="policy-section" id="retention">
+      <h2><span class="idx">09</span>Retention &amp; deletion</h2>
+      <ol class="lettered">
+        <li>On-device data (Section 2): retained until you clear the app's data or uninstall it. There's no separate deletion request to make — it's already entirely in your control.</li>
+        <li>Crashlytics/Analytics data (Section 5): retained by Google per Firebase's standard retention settings, typically on the order of months, and is not directly identifiable to you as a person.</li>
+        <li>Third-party lookups (Section 4): retained per each provider's own policy (Shodan, DeepSeek, Anthropic, NVD) — GreyRecon has no visibility into or control over that.</li>
+      </ol>
+    </section>
+
+    <section class="policy-section" id="children">
+      <h2><span class="idx">10</span>Children's privacy</h2>
+      <p>GreyRecon is a technical network-diagnostics tool and isn't directed at children. We don't knowingly collect data from anyone under 13 (or the relevant minimum age in your jurisdiction).</p>
+    </section>
+
+    <section class="policy-section" id="changes">
+      <h2><span class="idx">11</span>Changes to this policy</h2>
+      <p>If GreyRecon's data practices change — a new third-party integration, a new permission — this page will be updated and the effective date at the top will change. Material changes will also be reflected in the app's Play Store listing.</p>
+    </section>
+
+    <section class="policy-section" id="contact">
+      <h2><span class="idx">12</span>Contact</h2>
+      <p>Questions about this policy or GreyRecon's data handling can be sent to <code>[developer contact email — add before publishing]</code>.</p>
+    </section>
+
+  </main>
+
+  <footer class="policy-footer">
+    <span>GreyRecon is developed independently. This policy describes the app's actual, current behavior as of the effective date above.</span>
+    <span class="mono">com.greyrecon.app</span>
+  </footer>
+</div>
