@@ -54,6 +54,8 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
     var anthropicKey by remember { mutableStateOf(keyStore.anthropicKey.orEmpty()) }
     var shodanKey by remember { mutableStateOf(keyStore.shodanKey.orEmpty()) }
     var nvdKey by remember { mutableStateOf(keyStore.nvdKey.orEmpty()) }
+    var greynoiseKey by remember { mutableStateOf(keyStore.greynoiseKey.orEmpty()) }
+    var abuseipdbKey by remember { mutableStateOf(keyStore.abuseipdbKey.orEmpty()) }
     var aiProvider by remember { mutableStateOf(keyStore.aiProvider) }
     var savedMessage by remember { mutableStateOf<String?>(null) }
 
@@ -147,12 +149,32 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
             )
 
+            OutlinedTextField(
+                value = greynoiseKey,
+                onValueChange = { greynoiseKey = it; savedMessage = null },
+                label = { Text("GreyNoise API key (optional -- raises the daily IP-reputation lookup limit)") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            )
+
+            OutlinedTextField(
+                value = abuseipdbKey,
+                onValueChange = { abuseipdbKey = it; savedMessage = null },
+                label = { Text("AbuseIPDB API key (free -- required for IP abuse-reputation checks)") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            )
+
             TextButton(
                 onClick = {
                     keyStore.deepseekKey = deepseekKey.takeIf { it.isNotBlank() }
                     keyStore.anthropicKey = anthropicKey.takeIf { it.isNotBlank() }
                     keyStore.shodanKey = shodanKey.takeIf { it.isNotBlank() }
                     keyStore.nvdKey = nvdKey.takeIf { it.isNotBlank() }
+                    keyStore.greynoiseKey = greynoiseKey.takeIf { it.isNotBlank() }
+                    keyStore.abuseipdbKey = abuseipdbKey.takeIf { it.isNotBlank() }
                     keyStore.aiProvider = aiProvider
                     savedMessage = "Saved."
                 },
@@ -173,7 +195,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
 
             if (!isPro) {
                 Text(
-                    "Unlock Device History, Tools (subnet calculator, DNS/WHOIS lookup, CT monitoring, typosquat check, BLE scan), the Terminal, and the MCP server -- expose scan results as tools your own self-hosted nanobot instance (or any MCP client) can query conversationally. Scan Network stays free.",
+                    "Unlock Device History, Tools (subnet calculator, DNS/WHOIS lookup, CT monitoring, typosquat check, BLE scan), the Terminal, the AI Assistant (chat with an AI that runs real scans using your own API key), and the MCP server -- expose scan results as tools your own self-hosted nanobot instance (or any MCP client) can query conversationally. Scan Network stays free.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp),
                 )

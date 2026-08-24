@@ -45,6 +45,16 @@ class SecureKeyStore(context: Context) {
         get() = prefs.getString(KEY_NVD, null)?.takeIf { it.isNotBlank() }
         set(value) = prefs.edit().putString(KEY_NVD, value).apply()
 
+    /** Free GreyNoise Community API key -- optional (a few lookups/day work without one, more with a free account key). */
+    var greynoiseKey: String?
+        get() = prefs.getString(KEY_GREYNOISE, null)?.takeIf { it.isNotBlank() }
+        set(value) = prefs.edit().putString(KEY_GREYNOISE, value).apply()
+
+    /** Free AbuseIPDB API key -- required for that lookup (1000 checks/day on the free tier). */
+    var abuseipdbKey: String?
+        get() = prefs.getString(KEY_ABUSEIPDB, null)?.takeIf { it.isNotBlank() }
+        set(value) = prefs.edit().putString(KEY_ABUSEIPDB, value).apply()
+
     /** Which provider "Ask AI" uses. Defaults to DeepSeek since that's the only one verified live so far. */
     var aiProvider: AIProviderType
         get() = prefs.getString(KEY_AI_PROVIDER, null)
@@ -67,6 +77,8 @@ class SecureKeyStore(context: Context) {
         private const val KEY_ANTHROPIC = "anthropic_api_key"
         private const val KEY_SHODAN = "shodan_api_key"
         private const val KEY_NVD = "nvd_api_key"
+        private const val KEY_GREYNOISE = "greynoise_api_key"
+        private const val KEY_ABUSEIPDB = "abuseipdb_api_key"
         private const val KEY_AI_PROVIDER = "ai_provider"
         private const val KEY_MCP_TOKEN = "mcp_auth_token"
         private const val KEY_MCP_ENABLED = "mcp_enabled"
