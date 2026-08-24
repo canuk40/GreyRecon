@@ -2,6 +2,8 @@ package com.greyrecon.app.engine.discovery
 
 import com.greyrecon.app.engine.model.Device
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -72,12 +74,22 @@ class ActiveScanDiscoveryService(
      * "reachable" for addresses that don't actually have anything listening (confirmed
      * by re-probing serially afterward and getting no response at all). A one-off hit
      * doesn't get the benefit of the doubt; a repeatable one does.
+     *
+     * Probes all [probePorts] concurrently rather than one at a time: a host that's dead
+     * or fully firewalled used to cost up to len(probePorts) * connectTimeoutMs (~3.6s)
+     * per host since every port timed out in sequence; now it costs one concurrent wait
+     * (~connectTimeoutMs). Trade-off: a live host with a fast open port and other filtered
+     * ports no longer short-circuits the instant the open one confirms -- it now waits for
+     * every probe to settle, so a live host can cost up to connectTimeoutMs*2 instead of
+     * being near-instant. Worth it since most subnet addresses are dead, not live.
      */
     private suspend fun isReachable(ip: String): Boolean = withContext(Dispatchers.IO) {
-        for (port in probePorts) {
-            if (probeOnce(ip, port) && probeOnce(ip, port)) return@withContext true
-        }
-        pingReachable(ip)
+        val anyPortOpen = coroutineScope {
+            probePorts.map { port ->
+                async { probeOnce(ip, port) && probeOnce(ip, port) }
+            }.awaitAll()
+        }.any { it }
+        if (anyPortOpen) true else pingReachable(ip)
     }
 
     private fun probeOnce(ip: String, port: Int): Boolean = try {
