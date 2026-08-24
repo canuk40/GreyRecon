@@ -24,6 +24,7 @@ android {
 
     defaultConfig {
         applicationId = "com.greyrecon.app"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 26   // ConnectivityManager.NetworkCallback + modern WiFi APIs need this floor
         // Raised to 36 for real Play Store submission (new-app floor as of Aug 2026 -- see
         // GreyRecon.md). Was deliberately held at 30 for the legacy `untrusted_app_30` SELinux
@@ -32,8 +33,8 @@ android {
         // path degrades to its existing `ip neigh show` shell-out and TCP-probe fallbacks at this
         // targetSdk rather than losing discovery outright -- see GreyRecon.md for the full tradeoff.
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -148,4 +149,5 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 }

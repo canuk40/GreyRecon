@@ -20,6 +20,7 @@ data class BleDevice(
     val rssi: Int,
     val companyId: Int?,
     val vendor: String?,
+    val services: List<String>,
 )
 
 /**
@@ -42,6 +43,7 @@ data class BleDevice(
 class BleScanner(private val context: Context) {
 
     private val companyLookup = BleCompanyLookup(context)
+    private val serviceUuidLookup = BleServiceUuidLookup(context)
 
     fun scan(scanDurationMs: Long = 8_000): Flow<BleDevice> = callbackFlow {
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -60,6 +62,9 @@ class BleScanner(private val context: Context) {
 
                 val manufacturerData = result.scanRecord?.manufacturerSpecificData
                 val companyId = manufacturerData?.let { if (it.size() > 0) it.keyAt(0) else null }
+                val services = result.scanRecord?.serviceUuids
+                    ?.mapNotNull { serviceUuidLookup.lookup(it.uuid.toString()) }
+                    ?: emptyList()
 
                 trySend(
                     BleDevice(
@@ -68,6 +73,7 @@ class BleScanner(private val context: Context) {
                         rssi = result.rssi,
                         companyId = companyId,
                         vendor = companyId?.let { companyLookup.lookup(it) },
+                        services = services,
                     )
                 )
             }

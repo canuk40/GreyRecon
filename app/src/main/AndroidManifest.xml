@@ -11,10 +11,16 @@
          legacy permission model (minSdk is 26); targetSdk 36 means BLUETOOTH_SCAN is the real
          runtime-requested permission on API 31+ (see BleScanScreen.kt). Deliberately not requesting
          BLUETOOTH_CONNECT: BleScanner.kt guards its one CONNECT-gated call (BluetoothDevice.getName())
-         instead of asking for a permission this passive-scan feature doesn't otherwise need. -->
+         instead of asking for a permission this passive-scan feature doesn't otherwise need.
+         usesPermissionFlags="neverForLocation": BleScanner never derives physical location from
+         scan results (just company ID, service UUIDs, name, RSSI), so this asserts that truthfully
+         and keeps the scan working with system Location Services turned off, which this app doesn't
+         otherwise need for its BLE feature (confirmed live: without this flag, Android silently
+         withholds all BLE scan results whenever Location is off, even with the runtime permission
+         granted; no error, no callback, just an empty scan). -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
     <!-- AI provider calls (BYOK) + Shodan lookups -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Play Billing (GreyRecon Pro) -->

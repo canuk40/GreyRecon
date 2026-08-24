@@ -72,6 +72,29 @@ private fun setupToyboxBinDir(ctx: Context, binDir: File): Boolean {
 }
 
 /**
+ * Bundled recon CLI tools -- naabu, httpx, dnsx, subfinder (all MIT, github.com/projectdiscovery) --
+ * shipped as `jniLibs/<abi>/lib<name>.so` for the same reason as `libtoybox.so` above: AGP extracts
+ * them to a real on-disk, directly-exec-permitted file per ABI, and an Android App Bundle only ever
+ * delivers a given device's own ABI slice, so this doesn't bloat every install with all three
+ * architectures' copies. Unlike nmap (whose license explicitly forbids bundling/redistribution --
+ * still never bundled, still BYO via the general-purpose terminal below), these are MIT-licensed and
+ * genuinely fine to ship. Symlinked under their real tool name so `naabu`/`httpx`/`dnsx`/`subfinder`
+ * work immediately after install, same as toybox's applets -- no `greyrecon-pkg install` step needed
+ * for these four specifically. Missing on an ABI this build didn't bundle a given tool for (shouldn't
+ * happen today -- all three abiFilters get all four) is simply skipped, not an error.
+ */
+private fun setupBundledToolsBinDir(ctx: Context, binDir: File) {
+    for (name in listOf("naabu", "httpx", "dnsx", "subfinder")) {
+        val toolPath = File(ctx.applicationInfo.nativeLibraryDir, "lib$name.so")
+        if (!toolPath.exists()) continue
+        val link = File(binDir, name).toPath()
+        if (!Files.exists(link, LinkOption.NOFOLLOW_LINKS)) {
+            Files.createSymbolicLink(link, toolPath.toPath())
+        }
+    }
+}
+
+/**
  * Installs a shebang script bundled in the app's own assets (`assetName`, e.g. "greyrecon-pkg.sh")
  * into `$HOME/bin/<destName>`. These run as normal shebang scripts, so they go through
  * greyrecon_exec.c's existing shebang-rewrite path like any other script -- no new native binary or
@@ -102,11 +125,13 @@ private fun installBundledScript(ctx: Context, binDir: File, assetName: String, 
 
 /**
  * A real, interactive terminal -- a genuine PTY-backed shell (`/system/bin/sh`, always present on
- * Android, no bundled binary needed), not just a scrolling command-output viewer. GreyRecon never
- * bundles or redistributes any CLI tool itself (nmap included -- its Nmap Public Source License
- * explicitly forbids that, see GreyRecon.md); this is general-purpose infrastructure for whatever
- * the user already has installed/available on their own device (their own Termux install, a binary
- * they've placed themselves, or Android's own built-in utilities).
+ * Android, no bundled binary needed), not just a scrolling command-output viewer. Four MIT-licensed
+ * recon tools (naabu, httpx, dnsx, subfinder -- see [setupBundledToolsBinDir]) ship with the app and
+ * work immediately; beyond those, GreyRecon still never bundles or redistributes a CLI tool whose
+ * license forbids it (nmap included -- its Nmap Public Source License explicitly forbids that, see
+ * GreyRecon.md) -- this is general-purpose infrastructure for whatever else the user already has
+ * installed/available on their own device (their own Termux install, a binary they've placed
+ * themselves, or Android's own built-in utilities), or installs via `greyrecon-pkg`.
  *
  * Built on vendored `terminal-emulator`/`terminal-view` (Apache-2.0, see the `NOTICE.md` in each
  * module) -- the same VT100 engine and native PTY-allocation code Termux itself runs on millions of
@@ -245,6 +270,7 @@ fun TerminalScreen(
                     // Toybox last so its applets (ls, grep, etc.) fill in everything else -- matching
                     // the Termux-like experience the terminal is meant to offer.
                     setupToyboxBinDir(ctx, binDir)
+                    setupBundledToolsBinDir(ctx, binDir)
                     val pathPrefix = "${binDir.absolutePath}:"
                     // mksh buffers some heredocs (e.g. `cat <<'EOF'` in help.sh) through a real temp
                     // file rather than a pipe, and without $TMPDIR set it picks /data/local -- not

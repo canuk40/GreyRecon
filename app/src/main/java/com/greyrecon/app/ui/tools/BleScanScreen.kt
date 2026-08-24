@@ -105,7 +105,8 @@ fun BleScanScreen(onBack: () -> Unit) {
                     Text(
                         "${device.address}  ${device.rssi}dBm" +
                             (device.name?.let { "  $it" } ?: "") +
-                            (device.vendor?.let { "  [$it]" } ?: ""),
+                            (device.vendor?.let { "  [$it]" } ?: "") +
+                            (device.services.takeIf { it.isNotEmpty() }?.joinToString(prefix = "  {", postfix = "}") ?: ""),
                         fontFamily = FontFamily.Monospace,
                         style = MaterialTheme.typography.bodySmall,
                     )
