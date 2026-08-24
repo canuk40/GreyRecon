@@ -26,8 +26,12 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 
     val fetchServer = PkgFetchServer(application.filesDir).apply { start() }
 
+    /** Loopback bridge that makes the AI agent reachable from the terminal via the `ai` command. */
+    val agentServer = AgentBridgeServer(application).apply { start() }
+
     override fun onCleared() {
         session?.finishIfRunning()
         fetchServer.stop()
+        agentServer.stop()
     }
 }

@@ -24,6 +24,14 @@ COMMANDS
   toybox               List every bundled command by name
   <command> --help     Usage for one specific bundled command
 
+AI ASSISTANT
+
+  ai <question>        Ask GreyRecon's on-device AI agent, which runs the real
+                       recon tools (scan the network, look up CVEs, check CISA
+                       KEV, WHOIS, and more) to answer. Uses the AI provider +
+                       API key set in GreyRecon's Settings.
+                       e.g.  ai what's on my network and is anything exposed?
+
 PACKAGES (greyrecon-pkg)
 
   greyrecon-pkg install <file.grpkg | url> [sha256sum]   Install a package

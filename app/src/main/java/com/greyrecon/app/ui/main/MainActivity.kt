@@ -138,6 +138,9 @@ class MainActivity : ComponentActivity() {
                     composable("tools/ble") {
                         com.greyrecon.app.ui.tools.BleScanScreen(onBack = { navController.popBackStack() })
                     }
+                    composable("agent") {
+                        com.greyrecon.app.ui.agent.AgentChatScreen(onBack = { navController.popBackStack() })
+                    }
                     composable(
                         "terminal?command={command}",
                         arguments = listOf(navArgument("command") { type = NavType.StringType; nullable = true; defaultValue = null }),

@@ -239,6 +239,9 @@ fun TerminalScreen(
                     // greyrecon-pkg (see app/src/main/assets/greyrecon-pkg.sh) lives in the same bin
                     // dir -- an original package installer, not a dpkg/apt port; see GreyRecon.md.
                     installBundledScript(ctx, binDir, "greyrecon-pkg.sh", "greyrecon-pkg")
+                    // `ai <question>` -- talks to AgentBridgeServer, running the on-device AI agent
+                    // with the provider/key from Settings. Same install-a-shell-script pattern.
+                    installBundledScript(ctx, binDir, "ai.sh", "ai")
                     // Toybox last so its applets (ls, grep, etc.) fill in everything else -- matching
                     // the Termux-like experience the terminal is meant to offer.
                     setupToyboxBinDir(ctx, binDir)
@@ -259,6 +262,8 @@ fun TerminalScreen(
                         "LD_PRELOAD=$execShimPath",
                         // Told to greyrecon-pkg.sh's do_fetch() so it knows where to reach PkgFetchServer.
                         "GREYRECON_PKG_FETCH_PORT=${PkgFetchServer.FIXED_PORT}",
+                        // Told to ai.sh so it knows where to reach AgentBridgeServer.
+                        "GREYRECON_AGENT_PORT=${AgentBridgeServer.FIXED_PORT}",
                     )
                     val newSession = TerminalSession(shellPath, homeDir.absolutePath, arrayOf(shellPath), env, null, client)
                     viewModel.session = newSession

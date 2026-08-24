@@ -1,6 +1,8 @@
 package com.greyrecon.app.ui.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +16,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
@@ -55,7 +58,7 @@ fun HomeScreen(isPro: Boolean, onNavigate: (String) -> Unit) {
         AlertDialog(
             onDismissRequest = { upsellFeature = null },
             title = { Text("GreyRecon Pro") },
-            text = { Text("$feature is a Pro feature. Scan Network stays free -- Device History, Tools, and Terminal unlock with GreyRecon Pro.") },
+            text = { Text("$feature is a Pro feature. Scan Network stays free -- Device History, Tools, Terminal, and the AI Assistant unlock with GreyRecon Pro.") },
             confirmButton = {
                 TextButton(onClick = { upsellFeature = null; onNavigate("settings") }) { Text("View Pro") }
             },
@@ -66,7 +69,11 @@ fun HomeScreen(isPro: Boolean, onNavigate: (String) -> Unit) {
     }
     Scaffold { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // painterResource() can't load the launcher mipmap directly -- it's an adaptive-icon
@@ -123,6 +130,13 @@ fun HomeScreen(isPro: Boolean, onNavigate: (String) -> Unit) {
                 description = "Real interactive shell -- run your own CLI tools directly",
                 locked = !isPro,
                 onClick = { if (isPro) onNavigate("terminal") else upsellFeature = "Terminal" },
+            )
+            HomeMenuItem(
+                icon = Icons.Filled.SmartToy,
+                label = "AI Assistant",
+                description = "Chat with an AI that runs real scans on your network",
+                locked = !isPro,
+                onClick = { if (isPro) onNavigate("agent") else upsellFeature = "AI Assistant" },
             )
         }
     }
