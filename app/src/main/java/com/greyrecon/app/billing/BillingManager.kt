@@ -96,8 +96,10 @@ class BillingManager(context: Context) {
             )
             .build()
 
-        billingClient.queryProductDetailsAsync(queryParams) { result, productDetailsList ->
-            val productDetails: ProductDetails? = productDetailsList.firstOrNull()
+        // Billing Library 8 changed this callback's second arg from List<ProductDetails> to a
+        // QueryProductDetailsResult wrapper -- the actual list is now under .productDetailsList.
+        billingClient.queryProductDetailsAsync(queryParams) { result, queryResult ->
+            val productDetails: ProductDetails? = queryResult.productDetailsList.firstOrNull()
             if (result.responseCode != BillingClient.BillingResponseCode.OK || productDetails == null) {
                 onFailure("GreyRecon Pro isn't available yet -- the in-app product hasn't been configured in Play Console.")
                 return@queryProductDetailsAsync

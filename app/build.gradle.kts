@@ -32,8 +32,8 @@ android {
         // path degrades to its existing `ip neigh show` shell-out and TCP-probe fallbacks at this
         // targetSdk rather than losing discovery outright -- see GreyRecon.md for the full tradeoff.
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 4
+        versionName = "0.3.1"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -115,7 +115,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.security:security-crypto:1.1.0")
-    implementation("com.android.billingclient:billing-ktx:7.1.1")
+    implementation("com.android.billingclient:billing-ktx:8.3.0")
 
     // Crash reporting (see GreyRecon.md) -- BoM pins every Firebase artifact's version together,
     // no per-artifact version string needed on the two lines below.
