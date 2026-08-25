@@ -66,6 +66,7 @@ import com.greyrecon.app.engine.security.SecurityCheckResult
 import com.greyrecon.app.engine.snmp.SnmpClient
 import com.greyrecon.app.export.ExportShare
 import com.greyrecon.app.export.NmapXmlExporter
+import com.greyrecon.app.export.OcsfExporter
 import com.greyrecon.app.export.ScanExporter
 import com.greyrecon.app.history.HistoryScreen
 import com.greyrecon.app.ui.home.HomeScreen
@@ -284,6 +285,14 @@ fun GreyReconApp(
                             onClick = {
                                 menuExpanded = false
                                 ExportShare.share(context, NmapXmlExporter.toNmapXml(devicesSnapshot), "greyrecon_scan.xml", "text/xml")
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Export OCSF") },
+                            enabled = devicesSnapshot.isNotEmpty(),
+                            onClick = {
+                                menuExpanded = false
+                                ExportShare.share(context, OcsfExporter.toOcsf(devicesSnapshot), "greyrecon_scan_ocsf.json", "application/json")
                             },
                         )
                         DropdownMenuItem(

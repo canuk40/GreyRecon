@@ -82,6 +82,12 @@ object McpTools {
             required = listOf("cve_id"),
         ),
         ToolDef(
+            name = "check_ssvc",
+            description = "Get CISA's SSVC (Stakeholder-Specific Vulnerability Categorization) assessment for a CVE, if one exists: Exploitation status (none/poc/active), Automatable (can exploitation be scripted at scale), and Technical Impact (partial/total). A different prioritization axis than EPSS's probability estimate or KEV's binary flag -- answers 'should this be acted on now', not just 'how likely'. Most CVEs have no SSVC assessment; that's normal, not an error.",
+            parameters = linkedMapOf("cve_id" to "The CVE identifier, e.g. CVE-2023-1234"),
+            required = listOf("cve_id"),
+        ),
+        ToolDef(
             name = "dns_lookup",
             description = "Look up DNS records for a domain over DNS-over-HTTPS. Supports A, AAAA, MX, TXT, NS, CNAME, SOA record types.",
             parameters = linkedMapOf(
@@ -259,6 +265,21 @@ object McpTools {
                             appendLine("Added: ${entry.dateAdded}")
                             if (entry.knownRansomwareUse) appendLine("Known ransomware campaign use: YES")
                             if (entry.requiredAction.isNotBlank()) append("Required action: ${entry.requiredAction}")
+                        }.trim()
+                    },
+                    onFailure = { e -> throw e },
+                )
+            }
+            "check_ssvc" -> {
+                val cveId = requireArg(arguments, "cve_id")
+                dataSource.checkSsvc(cveId).fold(
+                    onSuccess = { assessment ->
+                        if (assessment == null) "No SSVC assessment available for $cveId (CISA hasn't enriched this CVE)."
+                        else buildString {
+                            appendLine("SSVC assessment for $cveId:")
+                            assessment.exploitation?.let { appendLine("Exploitation: $it") }
+                            assessment.automatable?.let { appendLine("Automatable: $it") }
+                            assessment.technicalImpact?.let { append("Technical Impact: $it") }
                         }.trim()
                     },
                     onFailure = { e -> throw e },
