@@ -33,8 +33,8 @@ android {
         // path degrades to its existing `ip neigh show` shell-out and TCP-probe fallbacks at this
         // targetSdk rather than losing discovery outright -- see GreyRecon.md for the full tradeoff.
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.4.1"
+        versionCode = 7
+        versionName = "0.4.2"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
