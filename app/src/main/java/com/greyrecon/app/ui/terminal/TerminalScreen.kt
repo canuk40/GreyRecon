@@ -72,19 +72,23 @@ private fun setupToyboxBinDir(ctx: Context, binDir: File): Boolean {
 }
 
 /**
- * Bundled recon CLI tools -- naabu, httpx, dnsx, subfinder (all MIT, github.com/projectdiscovery) --
- * shipped as `jniLibs/<abi>/lib<name>.so` for the same reason as `libtoybox.so` above: AGP extracts
- * them to a real on-disk, directly-exec-permitted file per ABI, and an Android App Bundle only ever
- * delivers a given device's own ABI slice, so this doesn't bloat every install with all three
- * architectures' copies. Unlike nmap (whose license explicitly forbids bundling/redistribution --
- * still never bundled, still BYO via the general-purpose terminal below), these are MIT-licensed and
- * genuinely fine to ship. Symlinked under their real tool name so `naabu`/`httpx`/`dnsx`/`subfinder`
- * work immediately after install, same as toybox's applets -- no `greyrecon-pkg install` step needed
- * for these four specifically. Missing on an ABI this build didn't bundle a given tool for (shouldn't
- * happen today -- all three abiFilters get all four) is simply skipped, not an error.
+ * Bundled recon CLI tools -- naabu, dnsx, subfinder (all MIT, github.com/projectdiscovery) -- shipped
+ * as `jniLibs/<abi>/lib<name>.so` for the same reason as `libtoybox.so` above: AGP extracts them to a
+ * real on-disk, directly-exec-permitted file per ABI, and an Android App Bundle only ever delivers a
+ * given device's own ABI slice, so this doesn't bloat every install with all three architectures'
+ * copies. Unlike nmap (whose license explicitly forbids bundling/redistribution -- still never
+ * bundled, still BYO via the general-purpose terminal below), these are MIT-licensed and genuinely
+ * fine to ship. Symlinked under their real tool name so `naabu`/`dnsx`/`subfinder` work immediately
+ * after install, same as toybox's applets -- no `greyrecon-pkg install` step needed for these three
+ * specifically. `httpx` (same family, MIT too) is deliberately NOT bundled here -- its dependency
+ * tree (an embedded JS engine among others) makes it the heaviest of the four by a wide margin, and
+ * bundling all four pushed jniLibs past what fit in GitHub's free Git LFS quota; it's still a normal
+ * `greyrecon-pkg install` away for anyone who wants it. Missing on an ABI this build didn't bundle a
+ * given tool for (shouldn't happen today -- all three abiFilters get all three) is simply skipped,
+ * not an error.
  */
 private fun setupBundledToolsBinDir(ctx: Context, binDir: File) {
-    for (name in listOf("naabu", "httpx", "dnsx", "subfinder")) {
+    for (name in listOf("naabu", "dnsx", "subfinder")) {
         val toolPath = File(ctx.applicationInfo.nativeLibraryDir, "lib$name.so")
         if (!toolPath.exists()) continue
         val link = File(binDir, name).toPath()
@@ -125,9 +129,9 @@ private fun installBundledScript(ctx: Context, binDir: File, assetName: String, 
 
 /**
  * A real, interactive terminal -- a genuine PTY-backed shell (`/system/bin/sh`, always present on
- * Android, no bundled binary needed), not just a scrolling command-output viewer. Four MIT-licensed
- * recon tools (naabu, httpx, dnsx, subfinder -- see [setupBundledToolsBinDir]) ship with the app and
- * work immediately; beyond those, GreyRecon still never bundles or redistributes a CLI tool whose
+ * Android, no bundled binary needed), not just a scrolling command-output viewer. Three MIT-licensed
+ * recon tools (naabu, dnsx, subfinder -- see [setupBundledToolsBinDir]) ship with the app and work
+ * immediately; beyond those, GreyRecon still never bundles or redistributes a CLI tool whose
  * license forbids it (nmap included -- its Nmap Public Source License explicitly forbids that, see
  * GreyRecon.md) -- this is general-purpose infrastructure for whatever else the user already has
  * installed/available on their own device (their own Termux install, a binary they've placed
