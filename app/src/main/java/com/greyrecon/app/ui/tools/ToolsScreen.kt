@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Warning
@@ -77,8 +78,14 @@ fun ToolsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             ToolMenuItem(
                 icon = Icons.Filled.Bluetooth,
                 label = "BLE Scan",
-                description = "Nearby Bluetooth Low Energy devices -- earbuds, wearables, beacons",
+                description = "Nearby BLE devices, plus AirTag/Tile/SmartTag tracker and BLE-spam-attack detection",
                 onClick = { onNavigate("tools/ble") },
+            )
+            ToolMenuItem(
+                icon = Icons.Filled.Nfc,
+                label = "NFC Inspector",
+                description = "Read NDEF tags and Mifare Classic tags still on their factory-default key",
+                onClick = { onNavigate("tools/nfc") },
             )
         }
     }

@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.greyrecon.app.engine.discovery.BleDevice
 import com.greyrecon.app.engine.discovery.BleScanner
+import com.greyrecon.app.engine.discovery.TrackerSightingStore
+import com.greyrecon.app.history.TrackerSighting
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,14 +45,20 @@ fun BleScanScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var scanning by remember { mutableStateOf(false) }
     var devices by remember { mutableStateOf<List<BleDevice>>(emptyList()) }
+    var sightings by remember { mutableStateOf<Map<String, TrackerSighting>>(emptyMap()) }
     val scope = rememberCoroutineScope()
+    val sightingStore = remember { TrackerSightingStore(context) }
 
     fun runScan() {
         scanning = true
         devices = emptyList()
+        sightings = emptyMap()
         scope.launch {
             BleScanner(context).scan().collect { found ->
                 devices = (devices.filter { it.address != found.address } + found).sortedByDescending { it.rssi }
+                found.trackerType?.let { type ->
+                    sightings = sightings + (found.address to sightingStore.recordSighting(found.address, type))
+                }
             }
             scanning = false
         }
@@ -95,6 +103,16 @@ fun BleScanScreen(onBack: () -> Unit) {
 
             if (scanning) CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
 
+            val spamCount = devices.count { it.spamSignature != null }
+            if (spamCount > 0) {
+                Text(
+                    "⚠ $spamCount possible BLE spam packet(s) detected -- someone nearby may be running a BLE-spam attack (spoofed pairing/action prompts). See flagged entries below.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
+
             if (devices.isNotEmpty()) {
                 Text(
                     "${devices.size} device(s) found",
@@ -110,8 +128,38 @@ fun BleScanScreen(onBack: () -> Unit) {
                         fontFamily = FontFamily.Monospace,
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    device.trackerType?.let { type ->
+                        val sighting = sightings[device.address]
+                        val repeatNote = sighting?.takeIf { it.sightingCount > 1 }
+                            ?.let { "  --  seen ${it.sightingCount}x, first noticed ${formatAgo(it.firstSeenAt)} ago" }
+                            ?: ""
+                        Text(
+                            "  ⚠ ${type.displayName}$repeatNote",
+                            color = MaterialTheme.colorScheme.error,
+                            fontFamily = FontFamily.Monospace,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    device.spamSignature?.let { spam ->
+                        Text(
+                            "  🚨 ${spam.displayName}",
+                            color = MaterialTheme.colorScheme.error,
+                            fontFamily = FontFamily.Monospace,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+private fun formatAgo(timestampMs: Long): String {
+    val minutes = (System.currentTimeMillis() - timestampMs) / 60_000
+    return when {
+        minutes < 1 -> "just now"
+        minutes < 60 -> "${minutes}m"
+        minutes < 1440 -> "${minutes / 60}h"
+        else -> "${minutes / 1440}d"
     }
 }

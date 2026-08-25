@@ -21,6 +21,8 @@ data class BleDevice(
     val companyId: Int?,
     val vendor: String?,
     val services: List<String>,
+    val trackerType: TrackerType?,
+    val spamSignature: SpamPackageType?,
 )
 
 /**
@@ -62,7 +64,8 @@ class BleScanner(private val context: Context) {
 
                 val manufacturerData = result.scanRecord?.manufacturerSpecificData
                 val companyId = manufacturerData?.let { if (it.size() > 0) it.keyAt(0) else null }
-                val services = result.scanRecord?.serviceUuids
+                val serviceUuids = result.scanRecord?.serviceUuids
+                val services = serviceUuids
                     ?.mapNotNull { serviceUuidLookup.lookup(it.uuid.toString()) }
                     ?: emptyList()
 
@@ -74,6 +77,8 @@ class BleScanner(private val context: Context) {
                         companyId = companyId,
                         vendor = companyId?.let { companyLookup.lookup(it) },
                         services = services,
+                        trackerType = TrackerDetector.detect(manufacturerData, serviceUuids),
+                        spamSignature = BleSpamDetector.classify(manufacturerData, serviceUuids),
                     )
                 )
             }

@@ -31,6 +31,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
     <!-- Required on Android 13+ to show the foreground service's own status notification -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- NFC tag inspector (NfcInspectorScreen.kt). required=false: this app still installs and
+         runs fine on the many devices with no NFC radio at all; the feature just isn't offered. -->
+    <uses-permission android:name="android.permission.NFC"/>
+    <uses-feature android:name="android.hardware.nfc" android:required="false"/>
 
     <application
         android:name=".GreyReconApplication"
@@ -43,6 +47,7 @@
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.GreyRecon">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

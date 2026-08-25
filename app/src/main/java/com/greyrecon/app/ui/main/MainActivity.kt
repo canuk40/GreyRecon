@@ -1,8 +1,13 @@
 package com.greyrecon.app.ui.main
 
 import android.Manifest
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -62,6 +67,7 @@ import com.greyrecon.app.engine.model.Device
 import com.greyrecon.app.engine.model.DeviceType
 import com.greyrecon.app.engine.model.Port
 import com.greyrecon.app.engine.model.ShodanFinding
+import com.greyrecon.app.engine.nfc.NfcTagBus
 import com.greyrecon.app.engine.security.SecurityCheckResult
 import com.greyrecon.app.engine.snmp.SnmpClient
 import com.greyrecon.app.export.ExportShare
@@ -74,6 +80,7 @@ import com.greyrecon.app.ui.score.NetworkScoreScreen
 import com.greyrecon.app.ui.settings.SettingsScreen
 import com.greyrecon.app.ui.theme.GreyReconTheme
 import com.greyrecon.app.ui.tools.DnsLookupScreen
+import com.greyrecon.app.ui.tools.NfcInspectorScreen
 import com.greyrecon.app.ui.tools.SubnetCalculatorScreen
 import com.greyrecon.app.ui.tools.ToolsScreen
 import com.greyrecon.app.ui.tools.WhoisLookupScreen
@@ -81,6 +88,39 @@ import com.greyrecon.app.ui.tools.WhoisLookupScreen
 class MainActivity : ComponentActivity() {
 
     private val viewModel: ScanViewModel by viewModels()
+
+    // Foreground dispatch is the only way Android delivers a discovered NFC tag while this
+    // Activity is the one on screen -- must be enabled/disabled around onResume/onPause (a stale
+    // registration left active after onPause can steal the tag-discovery intent from whatever the
+    // system would otherwise hand it to next). android:launchMode="singleTop" in the manifest is
+    // what makes the discovery arrive via onNewIntent() below on this same instance, rather than
+    // spawning a second MainActivity.
+    private val nfcPendingIntent: PendingIntent by lazy {
+        val intent = Intent(this, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP) }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+        PendingIntent.getActivity(this, 0, intent, flags)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        NfcAdapter.getDefaultAdapter(this)?.enableForegroundDispatch(this, nfcPendingIntent, null, null)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        NfcAdapter.getDefaultAdapter(this)?.disableForegroundDispatch(this)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        } else {
+            @Suppress("DEPRECATION") intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        }
+        tag?.let { NfcTagBus.onTagDiscovered?.invoke(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -138,6 +178,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("tools/ble") {
                         com.greyrecon.app.ui.tools.BleScanScreen(onBack = { navController.popBackStack() })
+                    }
+                    composable("tools/nfc") {
+                        NfcInspectorScreen(onBack = { navController.popBackStack() })
                     }
                     composable("agent") {
                         com.greyrecon.app.ui.agent.AgentChatScreen(onBack = { navController.popBackStack() })
