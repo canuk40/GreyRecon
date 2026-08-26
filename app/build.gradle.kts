@@ -111,6 +111,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    // Not used directly -- forces Gradle's version resolution (highest-requested-wins) above the
+    // ancient 1.1.0 that com.google.android.gms:play-services-base/-basement (pulled in
+    // transitively by Firebase) still declares, which Google Play's SDK Index flagged as outdated
+    // for this app specifically (confirmed live in Play Console's own notification).
+    implementation("androidx.fragment:fragment-ktx:1.9.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
