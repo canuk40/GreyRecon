@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Debug-build-only (app/src/debug is never merged into a release build): allows cleartext HTTP to the
-  dev machine's own LAN IP so greyrecon-pkg's fetch/install-from-URL can be tested against a local
-  test server without standing up TLS just for that. Real usage (release builds) gets the platform
-  default: cleartext HTTP blocked everywhere, unchanged.
+  Debug-build-only (app/src/debug is never merged into a release build). A network-security-config
+  resource, once present, makes the manifest's usesCleartextTraffic flag ineffective and any domain not
+  covered by a domain-config falls back to the platform default (cleartext blocked), so the previous
+  narrow single-IP allow-list here silently blocked ExposureChecker/DefaultCredsChecker/SecurityChecker's
+  http:// fallback against every other LAN device during debug testing (confirmed live: a real reachable
+  HTTP server on a non-listed IP failed with "No HTTP(S) service responded" even after adding
+  usesCleartextTraffic="true" to the manifest). GreyRecon's whole purpose is probing arbitrary,
+  runtime-discovered LAN IPs over HTTP, which can't be expressed as a fixed domain list, so debug builds
+  get a blanket allow instead. Release builds have no network-security-config at all and rely solely on
+  the manifest's usesCleartextTraffic="true".
 -->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">192.168.3.155</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true"/>
 </network-security-config>

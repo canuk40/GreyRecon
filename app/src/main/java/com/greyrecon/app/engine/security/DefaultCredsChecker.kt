@@ -1,6 +1,7 @@
 package com.greyrecon.app.engine.security
 
 import android.content.Context
+import com.greyrecon.app.ai.TriageVerdict
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -11,7 +12,9 @@ import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-data class DefaultCredsHit(val product: String, val username: String, val password: String)
+/** [triage] is filled in after the fact by [com.greyrecon.app.ai.FindingTriage] when an AI provider
+ * key is configured -- null means "not triaged" (no key, or triage itself failed), not "confirmed real". */
+data class DefaultCredsHit(val product: String, val username: String, val password: String, val evidence: String, val triage: TriageVerdict? = null)
 
 /**
  * Tests curated default-credential pairs against an HTTP Basic-Auth admin panel -- same
@@ -61,22 +64,29 @@ object DefaultCredsChecker {
     ): Result<DefaultCredsHit> = withContext(Dispatchers.IO) {
         candidates.chunked(batchSize).forEach { batch ->
             val results = batch.map { (user, pass) -> async { Triple(user, pass, probe(baseUrl, path, user, pass)) } }.awaitAll()
-            results.firstOrNull { (_, _, success) -> success }?.let { (user, pass, _) ->
-                return@withContext Result.success(DefaultCredsHit(product, user, pass))
+            results.firstOrNull { (_, _, evidence) -> evidence != null }?.let { (user, pass, evidence) ->
+                return@withContext Result.success(DefaultCredsHit(product, user, pass, evidence.orEmpty()))
             }
         }
         Result.failure(IOException("No default credential worked for $product ($baseUrl$path, tried ${candidates.size})"))
     }
 
-    private fun probe(baseUrl: String, path: String, username: String, password: String): Boolean =
+    /** Returns a short evidence snippet (status + body prefix) on a 2xx response, null otherwise --
+     * enough context for [com.greyrecon.app.ai.FindingTriage] to judge whether this is a real
+     * default-credential accept or a panel with no real auth check that 2xx's for anything. */
+    private fun probe(baseUrl: String, path: String, username: String, password: String): String? =
         try {
             val request = Request.Builder()
                 .url("$baseUrl$path")
                 .header("Authorization", Credentials.basic(username, password))
                 .get()
                 .build()
-            client.newCall(request).execute().use { it.code in 200..299 }
+            client.newCall(request).execute().use { response ->
+                if (response.code !in 200..299) return null
+                val body = response.body?.string()?.take(300).orEmpty()
+                "HTTP ${response.code}: $body"
+            }
         } catch (_: Exception) {
-            false
+            null
         }
 }

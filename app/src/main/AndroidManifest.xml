@@ -36,13 +36,19 @@
     <uses-permission android:name="android.permission.NFC"/>
     <uses-feature android:name="android.hardware.nfc" android:required="false"/>
 
+    <!-- usesCleartextTraffic: defaults to false at this targetSdk, which silently blocks every
+         plain-HTTP probe (SecurityChecker/ExposureChecker/DefaultCredsChecker's http:// fallback),
+         and most LAN admin panels (routers, cameras, printers) only serve HTTP, not HTTPS. Confirmed
+         live: without this, ExposureChecker's http:// attempt to a real reachable HTTP server failed
+         with no error surfaced beyond "No HTTP(S) service responded". -->
     <application
         android:name=".GreyReconApplication"
         android:allowBackup="false"
         android:label="@string/app_name"
         android:theme="@style/Theme.GreyRecon"
         android:icon="@mipmap/ic_launcher"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".ui.main.MainActivity"

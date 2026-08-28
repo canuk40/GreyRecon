@@ -1,5 +1,6 @@
 package com.greyrecon.app.engine.security
 
+import com.greyrecon.app.ai.TriageVerdict
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -8,7 +9,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
-data class ExposureFinding(val path: String, val name: String)
+/** [triage] is filled in after the fact by [com.greyrecon.app.ai.FindingTriage] when an AI provider
+ * key is configured -- null means "not triaged" (no key, or triage itself failed), not "confirmed real". */
+data class ExposureFinding(val path: String, val name: String, val evidence: String, val triage: TriageVerdict? = null)
 
 /**
  * A small, curated set of well-known misconfiguration/exposure checks -- the same category as
@@ -74,9 +77,20 @@ object ExposureChecker {
             client.newCall(Request.Builder().url("$baseUrl$path").get().build()).execute().use { response ->
                 if (response.code != 200) return null
                 val body = response.body?.string()?.take(65_536) ?: return null
-                if (signatures.any { body.contains(it) }) ExposureFinding(path, name) else null
+                val matched = signatures.firstOrNull { body.contains(it) } ?: return null
+                ExposureFinding(path, name, evidenceAround(body, matched))
             }
         } catch (_: Exception) {
             null
         }
+
+    /** A short window of the response body around the matched signature -- enough context for
+     * [com.greyrecon.app.ai.FindingTriage] to judge a real hit from a coincidental substring match. */
+    private fun evidenceAround(body: String, matched: String): String {
+        val index = body.indexOf(matched)
+        if (index < 0) return body.take(300)
+        val start = maxOf(0, index - 100)
+        val end = minOf(body.length, index + matched.length + 200)
+        return body.substring(start, end)
+    }
 }

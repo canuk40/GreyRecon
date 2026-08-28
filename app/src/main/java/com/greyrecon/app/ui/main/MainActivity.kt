@@ -60,6 +60,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.greyrecon.app.ai.AIProviderConfig
 import com.greyrecon.app.ai.AIProviderType
 import com.greyrecon.app.billing.BillingManager
 import com.greyrecon.app.data.SecureKeyStore
@@ -453,8 +454,8 @@ fun GreyReconApp(
                     onCheckSnmp = { ip -> viewModel.checkSnmp(ip) },
                     onCheckSnmpWalk = { ip -> viewModel.checkSnmpWalk(ip) },
                     onCheckSnmpBruteForce = { ip -> viewModel.checkSnmpBruteForce(ip) },
-                    onCheckExposures = { ip -> viewModel.checkExposures(ip) },
-                    onCheckDefaultCreds = { ip -> viewModel.checkDefaultCreds(ip) },
+                    onCheckExposures = { ip -> viewModel.checkExposures(ip, aiConfigFrom(keyStore)) },
+                    onCheckDefaultCreds = { ip -> viewModel.checkDefaultCreds(ip, aiConfigFrom(keyStore)) },
                     onOpenTerminal = onOpenTerminal,
                 )
             }
@@ -702,13 +703,26 @@ private fun DeviceActionsPanel(
                 Text("None of the 16 checked common exposures were found.", style = MaterialTheme.typography.bodySmall)
             } else {
                 Column {
-                    findings.forEach { finding -> Text("⚠ ${finding.path} — ${finding.name}", style = MaterialTheme.typography.bodySmall) }
+                    findings.forEach { finding ->
+                        val mark = if (finding.triage?.truePositive == false) "🤖" else "⚠"
+                        Text("$mark ${finding.path} — ${finding.name}", style = MaterialTheme.typography.bodySmall)
+                        finding.triage?.let { verdict ->
+                            val label = if (verdict.truePositive) "AI triage: likely real" else "AI triage: likely false positive"
+                            Text("$label — ${verdict.reason}", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
                 }
             }
         }
 
         ActionResultSection(label = "Default Credentials (Tomcat)", result = actions.defaultCreds) { hit ->
-            Text("⚠ ${hit.product} accepted ${hit.username.ifEmpty { "<blank>" }} / ${hit.password.ifEmpty { "<blank>" }}", style = MaterialTheme.typography.bodySmall)
+            Column {
+                Text("⚠ ${hit.product} accepted ${hit.username.ifEmpty { "<blank>" }} / ${hit.password.ifEmpty { "<blank>" }}", style = MaterialTheme.typography.bodySmall)
+                hit.triage?.let { verdict ->
+                    val label = if (verdict.truePositive) "AI triage: likely real" else "AI triage: likely false positive"
+                    Text("$label — ${verdict.reason}", style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
 
         ActionResultSection(label = "Wake on LAN", result = actions.wakeOnLan) { message ->
@@ -777,6 +791,21 @@ private fun <T> ActionResultSection(label: String, result: ActionResult<T>, cont
             }
         }
     }
+}
+
+/** Null when no key is configured for the selected provider -- callers treat that as "skip triage",
+ * not an error, since [ScanViewModel.checkExposures]/[ScanViewModel.checkDefaultCreds] triage is opt-in. */
+private fun aiConfigFrom(keyStore: SecureKeyStore): AIProviderConfig? {
+    val provider = keyStore.aiProvider
+    val key = when (provider) {
+        AIProviderType.ANTHROPIC -> keyStore.anthropicKey
+        else -> keyStore.deepseekKey
+    } ?: return null
+    val model = when (provider) {
+        AIProviderType.ANTHROPIC -> "claude-sonnet-5"
+        else -> "deepseek-chat"
+    }
+    return AIProviderConfig(type = provider, apiKey = key, model = model)
 }
 
 private fun portLine(port: Port): String =

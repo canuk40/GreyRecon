@@ -6,4 +6,6 @@ data class CveFinding(
     val severity: String?,
     /** EPSS (first.org) 0.0-1.0 probability of real-world exploitation in the next 30 days -- null if the EPSS lookup failed or hasn't run. Independent of [severity]: a CVSS-critical CVE can have a low EPSS score, and vice versa. */
     val epssScore: Double? = null,
+    /** Whether this CVE is in CISA's Known Exploited Vulnerabilities catalog -- confirmed active exploitation, not just a predicted probability like [epssScore]. */
+    val inKev: Boolean = false,
 )

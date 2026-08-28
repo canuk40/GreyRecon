@@ -46,6 +46,7 @@ object NetworkScore {
     private const val HEADER_BUDGET = 20
     private const val TLS_BUDGET = 30
     private const val NVD_BUDGET = 25
+    private const val KEV_BUDGET = 30
 
     fun compute(devices: List<Device>, actions: Map<String, DeviceActions>): NetworkScoreResult {
         var score = 100
@@ -57,6 +58,7 @@ object NetworkScore {
         var headerBudget = HEADER_BUDGET
         var tlsBudget = TLS_BUDGET
         var nvdBudget = NVD_BUDGET
+        var kevBudget = KEV_BUDGET
 
         var portScannedCount = 0
         var shodanCheckedCount = 0
@@ -148,6 +150,19 @@ object NetworkScore {
                 // than a medium-severity one actively being exploited in the wild. Findings with no EPSS
                 // score (lookup failed/unavailable) are skipped rather than guessed at.
                 nvdChecked.value.forEach { finding ->
+                    // KEV and EPSS are independent signals -- confirmed active exploitation vs. a predicted
+                    // probability -- so a CVE can cost points on both. KEV membership is the stronger of the
+                    // two (CISA doesn't add a CVE until it's actually been used in the wild), hence its own,
+                    // larger budget rather than folding it into the EPSS deduction above.
+                    if (finding.inKev) {
+                        val deduct = minOf(18, kevBudget)
+                        if (deduct > 0) {
+                            kevBudget -= deduct
+                            score -= deduct
+                            findings += ScoreFinding(device.ipAddress, "Actively exploited CVE (CISA KEV)", "${finding.cveId} -- confirmed exploitation in the wild", deduct)
+                        }
+                    }
+
                     val epss = finding.epssScore ?: return@forEach
                     val deduct = when {
                         epss >= 0.5 -> minOf(12, nvdBudget)

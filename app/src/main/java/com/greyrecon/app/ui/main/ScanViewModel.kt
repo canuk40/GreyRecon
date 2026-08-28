@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.greyrecon.app.ai.AIProviderConfig
 import com.greyrecon.app.ai.AIProviderFactory
 import com.greyrecon.app.ai.AIProviderType
+import com.greyrecon.app.ai.FindingTriage
 import com.greyrecon.app.engine.discovery.ActiveScanDiscoveryService
 import com.greyrecon.app.engine.discovery.ArpTableDiscoveryService
 import com.greyrecon.app.engine.discovery.DeviceClassifier
@@ -15,6 +16,7 @@ import com.greyrecon.app.engine.discovery.SubnetInfo
 import com.greyrecon.app.engine.discovery.UpnpDiscoveryService
 import com.greyrecon.app.engine.discovery.VendorLookup
 import com.greyrecon.app.engine.cve.EpssClient
+import com.greyrecon.app.engine.cve.KevClient
 import com.greyrecon.app.engine.cve.NvdClient
 import com.greyrecon.app.engine.model.Device
 import com.greyrecon.app.engine.scan.PortServiceLookup
@@ -27,6 +29,8 @@ import com.greyrecon.app.engine.snmp.SnmpClient
 import com.greyrecon.app.engine.snmp.SnmpCommunityWordlist
 import com.greyrecon.app.engine.wol.WakeOnLan
 import com.greyrecon.app.history.DeviceHistoryStore
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,6 +53,7 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
     private val historyStore by lazy { DeviceHistoryStore(getApplication()) }
     private val portServiceLookup by lazy { PortServiceLookup(getApplication()) }
     private val snmpCommunityWordlist by lazy { SnmpCommunityWordlist(getApplication()) }
+    private val kevClient by lazy { KevClient() }
 
     /** Backing store for whatever's currently in [_state]'s device list -- kept so [scanPorts] can merge port results back in and reclassify, not just stash them in [_deviceActions]. */
     private val discoveredDevices = LinkedHashMap<String, Device>()
@@ -169,10 +174,17 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             val serviceHint = device.openPorts.firstOrNull()?.serviceName
             NvdClient(apiKey).search(vendor, serviceHint)
                 .onSuccess { findings ->
-                    // Best-effort: EPSS is a separate free service with its own failure modes -- an EPSS
-                    // outage shouldn't hide real NVD results the user already has, just leave epssScore null.
+                    // Best-effort: EPSS/KEV are separate free services with their own failure modes -- an
+                    // outage on either shouldn't hide real NVD results the user already has, just leave the
+                    // corresponding field at its default. KEV's catalog is fetched once and cached in-process
+                    // ([KevClient]), so only the first lookup here pays a network cost.
                     val epssScores = EpssClient.lookup(findings.map { it.cveId }).getOrElse { emptyMap() }
-                    val enriched = findings.map { it.copy(epssScore = epssScores[it.cveId]) }
+                    val kevHits = findings.map { finding ->
+                        async { finding.cveId to kevClient.lookup(finding.cveId).getOrNull() }
+                    }.awaitAll().toMap()
+                    val enriched = findings.map {
+                        it.copy(epssScore = epssScores[it.cveId], inKev = kevHits[it.cveId] != null)
+                    }
                     updateActions(device.ipAddress) { it.copy(nvdFindings = ActionResult.Success(enriched)) }
                 }
                 .onFailure { e -> updateActions(device.ipAddress) { it.copy(nvdFindings = ActionResult.Error(e.message ?: "NVD lookup failed")) } }
@@ -206,18 +218,34 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun checkExposures(ipAddress: String) {
+    /** [aiConfig] is optional -- when present (an AI provider key is configured), findings get a
+     * best-effort LLM false-positive triage pass after the check completes; when absent, findings are
+     * shown as-is, same as before triage existed. Never blocks or fails the check itself. */
+    fun checkExposures(ipAddress: String, aiConfig: AIProviderConfig? = null) {
         updateActions(ipAddress) { it.copy(exposures = ActionResult.Loading) }
         viewModelScope.launch {
             ExposureChecker.check(ipAddress)
-                .onSuccess { findings -> updateActions(ipAddress) { it.copy(exposures = ActionResult.Success(findings)) } }
+                .onSuccess { findings ->
+                    updateActions(ipAddress) { it.copy(exposures = ActionResult.Success(findings)) }
+                    if (aiConfig != null && findings.isNotEmpty()) {
+                        val triaged = findings.map { finding ->
+                            async {
+                                FindingTriage.evaluate(aiConfig, finding.name, finding.evidence)
+                                    .getOrNull()
+                                    ?.let { finding.copy(triage = it) } ?: finding
+                            }
+                        }.awaitAll()
+                        updateActions(ipAddress) { it.copy(exposures = ActionResult.Success(triaged)) }
+                    }
+                }
                 .onFailure { e -> updateActions(ipAddress) { it.copy(exposures = ActionResult.Error(e.message ?: "Exposure check failed")) } }
         }
     }
 
     /** Follow-up to [checkExposures] finding an exposed Tomcat Manager -- confirming a *default*
-     * credential still works is a materially higher-severity finding than just "reachable". */
-    fun checkDefaultCreds(ipAddress: String) {
+     * credential still works is a materially higher-severity finding than just "reachable". [aiConfig]
+     * has the same optional best-effort triage behavior as [checkExposures]. */
+    fun checkDefaultCreds(ipAddress: String, aiConfig: AIProviderConfig? = null) {
         updateActions(ipAddress) { it.copy(defaultCreds = ActionResult.Loading) }
         viewModelScope.launch {
             val candidates = DefaultCredsChecker.candidatesFor(getApplication(), "Tomcat")
@@ -225,7 +253,16 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                 runCatching { java.net.URL(base).openConnection().connect() }.isSuccess
             } ?: "http://$ipAddress"
             DefaultCredsChecker.tryDefaults(baseUrl, "/manager/html", "Tomcat", candidates)
-                .onSuccess { hit -> updateActions(ipAddress) { it.copy(defaultCreds = ActionResult.Success(hit)) } }
+                .onSuccess { hit ->
+                    updateActions(ipAddress) { it.copy(defaultCreds = ActionResult.Success(hit)) }
+                    if (aiConfig != null) {
+                        FindingTriage.evaluate(aiConfig, "${hit.product} default credentials", hit.evidence)
+                            .getOrNull()
+                            ?.let { verdict ->
+                                updateActions(ipAddress) { it.copy(defaultCreds = ActionResult.Success(hit.copy(triage = verdict))) }
+                            }
+                    }
+                }
                 .onFailure { e -> updateActions(ipAddress) { it.copy(defaultCreds = ActionResult.Error(e.message ?: "Default-credential check failed")) } }
         }
     }
