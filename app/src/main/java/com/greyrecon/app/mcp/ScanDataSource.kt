@@ -17,6 +17,8 @@ import com.greyrecon.app.engine.cve.KevClient
 import com.greyrecon.app.engine.cve.KevEntry
 import com.greyrecon.app.engine.cve.NvdClient
 import com.greyrecon.app.engine.cve.SsvcAssessment
+import com.greyrecon.app.engine.cve.VulnCheckKevClient
+import com.greyrecon.app.engine.cve.VulnCheckKevEntry
 import com.greyrecon.app.engine.cve.VulnrichmentClient
 import com.greyrecon.app.engine.model.Device
 import com.greyrecon.app.engine.model.Port
@@ -143,6 +145,9 @@ class ScanDataSource(private val context: Context) {
 
     /** CISA's SSVC decision points for a CVE (Exploitation/Automatable/Technical Impact) -- pairs with checkKev/epssScore as a third, org-action-oriented prioritization axis. */
     suspend fun checkSsvc(cveId: String): Result<SsvcAssessment?> = VulnrichmentClient.lookup(cveId)
+
+    /** VulnCheck's own KEV index -- a real superset of CISA's catalog (see VulnCheckKevClient's doc comment); requires the user's own free-tier VulnCheck key. */
+    suspend fun checkVulncheckKev(cveId: String): Result<VulnCheckKevEntry?> = VulnCheckKevClient(keyStore.vulncheckKey).lookup(cveId)
 
     /** DNS-over-HTTPS record lookup for a domain (A/AAAA/MX/TXT/NS/CNAME/SOA). */
     suspend fun dnsLookup(domain: String, type: String): Result<List<DnsRecord>> = DnsLookup.lookup(domain, type)

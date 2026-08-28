@@ -56,6 +56,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
     var nvdKey by remember { mutableStateOf(keyStore.nvdKey.orEmpty()) }
     var greynoiseKey by remember { mutableStateOf(keyStore.greynoiseKey.orEmpty()) }
     var abuseipdbKey by remember { mutableStateOf(keyStore.abuseipdbKey.orEmpty()) }
+    var vulncheckKey by remember { mutableStateOf(keyStore.vulncheckKey.orEmpty()) }
     var aiProvider by remember { mutableStateOf(keyStore.aiProvider) }
     var savedMessage by remember { mutableStateOf<String?>(null) }
 
@@ -167,6 +168,15 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
             )
 
+            OutlinedTextField(
+                value = vulncheckKey,
+                onValueChange = { vulncheckKey = it; savedMessage = null },
+                label = { Text("VulnCheck API key (free tier -- required for VulnCheck's own KEV index, a superset of CISA's)") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            )
+
             TextButton(
                 onClick = {
                     keyStore.deepseekKey = deepseekKey.takeIf { it.isNotBlank() }
@@ -175,6 +185,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                     keyStore.nvdKey = nvdKey.takeIf { it.isNotBlank() }
                     keyStore.greynoiseKey = greynoiseKey.takeIf { it.isNotBlank() }
                     keyStore.abuseipdbKey = abuseipdbKey.takeIf { it.isNotBlank() }
+                    keyStore.vulncheckKey = vulncheckKey.takeIf { it.isNotBlank() }
                     keyStore.aiProvider = aiProvider
                     savedMessage = "Saved."
                 },

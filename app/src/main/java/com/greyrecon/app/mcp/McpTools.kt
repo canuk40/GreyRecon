@@ -88,6 +88,12 @@ object McpTools {
             required = listOf("cve_id"),
         ),
         ToolDef(
+            name = "check_vulncheck_kev",
+            description = "Check whether a specific CVE is on VulnCheck's own Known Exploited Vulnerabilities index -- a real superset of CISA's KEV catalog, since VulnCheck's own research team adds independently-confirmed exploited CVEs CISA hasn't (yet, or ever will) formally list. Use alongside check_kev, not instead of it: a CVE absent from CISA's list can still show up here. Requires the user's own free-tier VulnCheck API key.",
+            parameters = linkedMapOf("cve_id" to "The CVE identifier, e.g. CVE-2023-1234"),
+            required = listOf("cve_id"),
+        ),
+        ToolDef(
             name = "dns_lookup",
             description = "Look up DNS records for a domain over DNS-over-HTTPS. Supports A, AAAA, MX, TXT, NS, CNAME, SOA record types.",
             parameters = linkedMapOf(
@@ -280,6 +286,25 @@ object McpTools {
                             assessment.exploitation?.let { appendLine("Exploitation: $it") }
                             assessment.automatable?.let { appendLine("Automatable: $it") }
                             assessment.technicalImpact?.let { append("Technical Impact: $it") }
+                        }.trim()
+                    },
+                    onFailure = { e -> throw e },
+                )
+            }
+            "check_vulncheck_kev" -> {
+                val cveId = requireArg(arguments, "cve_id")
+                dataSource.checkVulncheckKev(cveId).fold(
+                    onSuccess = { entry ->
+                        if (entry == null) "$cveId is NOT on VulnCheck's KEV index."
+                        else buildString {
+                            appendLine("⚠ ${entry.cveIds.joinToString(", ")} IS on VulnCheck's KEV index — confirmed active in-the-wild exploitation.")
+                            appendLine("Name: ${entry.vulnerabilityName}")
+                            appendLine("Added: ${entry.dateAdded}")
+                            appendLine("Known ransomware campaign use: ${if (entry.knownRansomwareUse) "YES" else "no"}")
+                            if (entry.reportedExploitationSourceCount > 0) {
+                                appendLine("Independently confirmed by ${entry.reportedExploitationSourceCount} source(s)")
+                            }
+                            if (entry.requiredAction.isNotBlank()) append("Required action: ${entry.requiredAction}")
                         }.trim()
                     },
                     onFailure = { e -> throw e },

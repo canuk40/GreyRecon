@@ -55,6 +55,11 @@ class SecureKeyStore(context: Context) {
         get() = prefs.getString(KEY_ABUSEIPDB, null)?.takeIf { it.isNotBlank() }
         set(value) = prefs.edit().putString(KEY_ABUSEIPDB, value).apply()
 
+    /** Free-tier VulnCheck API key -- required for that lookup (VulnCheck's own KEV index, a broader superset of CISA's). */
+    var vulncheckKey: String?
+        get() = prefs.getString(KEY_VULNCHECK, null)?.takeIf { it.isNotBlank() }
+        set(value) = prefs.edit().putString(KEY_VULNCHECK, value).apply()
+
     /** Which provider "Ask AI" uses. Defaults to DeepSeek since that's the only one verified live so far. */
     var aiProvider: AIProviderType
         get() = prefs.getString(KEY_AI_PROVIDER, null)
@@ -79,6 +84,7 @@ class SecureKeyStore(context: Context) {
         private const val KEY_NVD = "nvd_api_key"
         private const val KEY_GREYNOISE = "greynoise_api_key"
         private const val KEY_ABUSEIPDB = "abuseipdb_api_key"
+        private const val KEY_VULNCHECK = "vulncheck_api_key"
         private const val KEY_AI_PROVIDER = "ai_provider"
         private const val KEY_MCP_TOKEN = "mcp_auth_token"
         private const val KEY_MCP_ENABLED = "mcp_enabled"

@@ -30,8 +30,9 @@ object AgentFactory {
 
     /**
      * Build an agent backend for the provider the user has selected in Settings, using their
-     * stored key. Returns null with a reason if no usable key is configured, so the chat screen
-     * can tell the user exactly what to add rather than failing silently on first message.
+     * stored key. Falls back to [KeywordFallbackAgentBackend] when no usable key is configured,
+     * rather than leaving the chat screen a dead end -- basic commands (scan, check an IP, check a
+     * CVE) still work; only free-form conversational answers actually need a key.
      */
     fun create(
         keyStore: SecureKeyStore,
@@ -41,7 +42,7 @@ object AgentFactory {
         return when (keyStore.aiProvider) {
             AIProviderType.ANTHROPIC -> {
                 val key = keyStore.anthropicKey
-                    ?: return Result.failure(NoKeyException("Add your Anthropic API key in Settings to use the AI Assistant."))
+                    ?: return Result.success(KeywordFallbackAgentBackend(executor))
                 Result.success(AnthropicAgentBackend(apiKey = key, executor = executor))
             }
             // Every other provider is OpenAI-compatible. The only OpenAI-compatible key the app
@@ -50,7 +51,7 @@ object AgentFactory {
             else -> {
                 val provider = keyStore.aiProvider
                 val key = keyStore.deepseekKey
-                    ?: return Result.failure(NoKeyException("Add your ${provider.name.lowercase().replaceFirstChar { it.uppercase() }} API key in Settings to use the AI Assistant."))
+                    ?: return Result.success(KeywordFallbackAgentBackend(executor))
                 val baseUrl = OpenAICompatibleProvider.baseUrlFor(provider)
                 val model = defaultModelFor(provider)
                 Result.success(OpenAiAgentBackend(apiKey = key, baseUrl = baseUrl, model = model, executor = executor))
@@ -67,8 +68,6 @@ object AgentFactory {
         AIProviderType.ANTHROPIC -> "claude-sonnet-5" // unreachable here, kept exhaustive
     }
 }
-
-class NoKeyException(message: String) : Exception(message)
 
 /** Shared system prompt: makes the model a proactive recon operator that uses the tools rather than guessing. */
 internal const val AGENT_SYSTEM_PROMPT =
