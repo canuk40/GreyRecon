@@ -1,5 +1,8 @@
 package com.greyrecon.app.history
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,10 +43,10 @@ fun NetworkTimelineScreen(onBack: () -> Unit, viewModel: HistoryViewModel = view
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Network Timeline") },
+                title = { Text(stringResource(R.string.network_timeline)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
             )

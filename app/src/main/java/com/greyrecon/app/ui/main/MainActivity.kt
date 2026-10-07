@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.main
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import android.Manifest
 import android.app.PendingIntent
 import android.content.Intent
@@ -12,6 +15,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -46,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,9 +63,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.greyrecon.app.ads.BannerAdBar
+import com.greyrecon.app.ads.InterstitialAdManager
 import com.greyrecon.app.ai.AIProviderConfig
 import com.greyrecon.app.ai.AIProviderType
 import com.greyrecon.app.billing.BillingManager
@@ -128,11 +137,46 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val keyStore = SecureKeyStore(applicationContext)
         val billingManager = BillingManager(applicationContext)
+        // Ask Play for a review only after a scan that really found devices (see ReviewPrompter).
+        lifecycleScope.launch {
+            var previous: ScanState = ScanState.Idle
+            viewModel.state.collect { current ->
+                if (previous is ScanState.Scanning && current is ScanState.Done && current.devices.isNotEmpty()) {
+                    ReviewPrompter.onScanSucceeded(this@MainActivity)
+                }
+                previous = current
+            }
+        }
         billingManager.start() // top-level, not screen-scoped -- entitlement must be fresh on Home too, not just Settings
         setContent {
             GreyReconTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = "home") {
+                val isProForAds by billingManager.isPro.collectAsState()
+
+                // Interstitial on screen transitions (Pro-gated and frequency-capped inside
+                // InterstitialAdManager). Skips the very first composition so an ad never shows on
+                // app launch itself - only on real navigation between screens.
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+                var isFirstTransition by remember { mutableStateOf(true) }
+                LaunchedEffect(currentRoute) {
+                    if (isFirstTransition) {
+                        isFirstTransition = false
+                    } else {
+                        InterstitialAdManager.maybeShowOnTransition(this@MainActivity, isProForAds)
+                    }
+                }
+
+                // The banner is a real sibling BELOW the nav content rather than an overlay, so it
+                // reserves its own layout space - scan results and other scrollable content can
+                // never end up underneath it. NavHost takes the remaining height via weight(1f).
+                // (Its body is left at the original indentation to keep this diff reviewable.)
+                Column(modifier = Modifier.fillMaxSize()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = "home",
+                    modifier = Modifier.weight(1f),
+                ) {
                     composable("home") {
                         val isPro by billingManager.isPro.collectAsState()
                         HomeScreen(isPro = isPro, onNavigate = { route -> navController.navigate(route) })
@@ -215,6 +259,8 @@ class MainActivity : ComponentActivity() {
                         com.greyrecon.app.ui.topology.NetworkTopologyScreen(devices, onBack = { navController.popBackStack() })
                     }
                 }
+                BannerAdBar(isPro = isProForAds)
+                }
             }
         }
     }
@@ -296,19 +342,19 @@ fun GreyReconApp(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scan Network") },
+                title = { Text(stringResource(R.string.scan_network)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { menuExpanded = true }) {
-                        Icon(Icons.Filled.Menu, contentDescription = "More options")
+                        Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                         DropdownMenuItem(
-                            text = { Text("Export CSV") },
+                            text = { Text(stringResource(R.string.export_csv)) },
                             enabled = devicesSnapshot.isNotEmpty(),
                             onClick = {
                                 menuExpanded = false
@@ -316,7 +362,7 @@ fun GreyReconApp(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Export JSON") },
+                            text = { Text(stringResource(R.string.export_json)) },
                             enabled = devicesSnapshot.isNotEmpty(),
                             onClick = {
                                 menuExpanded = false
@@ -324,7 +370,7 @@ fun GreyReconApp(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Export Nmap XML") },
+                            text = { Text(stringResource(R.string.export_nmap_xml)) },
                             enabled = devicesSnapshot.isNotEmpty(),
                             onClick = {
                                 menuExpanded = false
@@ -332,7 +378,7 @@ fun GreyReconApp(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Export OCSF") },
+                            text = { Text(stringResource(R.string.export_ocsf)) },
                             enabled = devicesSnapshot.isNotEmpty(),
                             onClick = {
                                 menuExpanded = false
@@ -340,12 +386,12 @@ fun GreyReconApp(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Security Score") },
+                            text = { Text(stringResource(R.string.security_score)) },
                             enabled = devicesSnapshot.isNotEmpty(),
                             onClick = { menuExpanded = false; onOpenScore() },
                         )
                         DropdownMenuItem(
-                            text = { Text("Topology") },
+                            text = { Text(stringResource(R.string.topology)) },
                             enabled = devicesSnapshot.isNotEmpty(),
                             onClick = { menuExpanded = false; onOpenTopology() },
                         )
@@ -382,13 +428,13 @@ fun GreyReconApp(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Scan Network")
+                    Text(stringResource(R.string.scan_network))
                 }
 
                 val devices = when (val s = state) {
                     is ScanState.Idle -> {
                         Text(
-                            text = "Tap Scan Network to discover devices on this WiFi network.",
+                            text = stringResource(R.string.empty_tap_scan),
                             modifier = Modifier.padding(top = 24.dp),
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -396,7 +442,7 @@ fun GreyReconApp(
                     }
                     is ScanState.NoWifiSubnet -> {
                         Text(
-                            text = "Not connected to WiFi -- can't determine a subnet to scan.",
+                            text = stringResource(R.string.not_connected_wifi),
                             modifier = Modifier.padding(top = 24.dp),
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -484,10 +530,10 @@ private fun KeyEntryDialog(title: String, onSubmit: (String) -> Unit, onDismiss:
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (text.isNotBlank()) onSubmit(text) }) { Text("Use key") }
+            TextButton(onClick = { if (text.isNotBlank()) onSubmit(text) }) { Text(stringResource(R.string.use_key)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }
@@ -587,32 +633,32 @@ private fun DeviceActionsPanel(
         Box {
             TextButton(onClick = { actionsMenuExpanded = true }) {
                 Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text("Actions")
+                Text(stringResource(R.string.actions))
             }
             DropdownMenu(expanded = actionsMenuExpanded, onDismissRequest = { actionsMenuExpanded = false }) {
-                DropdownMenuItem(text = { Text("Scan Ports") }, onClick = { actionsMenuExpanded = false; onScanPorts() })
-                DropdownMenuItem(text = { Text("Ask AI") }, onClick = { actionsMenuExpanded = false; onAskAi() })
-                DropdownMenuItem(text = { Text("Check Shodan") }, onClick = { actionsMenuExpanded = false; onCheckShodan() })
-                DropdownMenuItem(text = { Text("Check NVD") }, onClick = { actionsMenuExpanded = false; onCheckNvd() })
-                DropdownMenuItem(text = { Text("Check SNMP") }, onClick = { actionsMenuExpanded = false; onCheckSnmp() })
-                DropdownMenuItem(text = { Text("SNMP Walk (interfaces)") }, onClick = { actionsMenuExpanded = false; onCheckSnmpWalk() })
-                DropdownMenuItem(text = { Text("Try Common Community Strings") }, onClick = { actionsMenuExpanded = false; onCheckSnmpBruteForce() })
-                DropdownMenuItem(text = { Text("Check Common Exposures") }, onClick = { actionsMenuExpanded = false; onCheckExposures() })
-                DropdownMenuItem(text = { Text("Try Default Credentials (Tomcat)") }, onClick = { actionsMenuExpanded = false; onCheckDefaultCreds() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.scan_ports)) }, onClick = { actionsMenuExpanded = false; onScanPorts() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.ask_ai)) }, onClick = { actionsMenuExpanded = false; onAskAi() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.check_shodan)) }, onClick = { actionsMenuExpanded = false; onCheckShodan() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.check_nvd)) }, onClick = { actionsMenuExpanded = false; onCheckNvd() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.check_snmp)) }, onClick = { actionsMenuExpanded = false; onCheckSnmp() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.snmp_walk)) }, onClick = { actionsMenuExpanded = false; onCheckSnmpWalk() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.try_common_strings)) }, onClick = { actionsMenuExpanded = false; onCheckSnmpBruteForce() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.check_common_exposures)) }, onClick = { actionsMenuExpanded = false; onCheckExposures() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.try_default_creds)) }, onClick = { actionsMenuExpanded = false; onCheckDefaultCreds() })
                 DropdownMenuItem(
-                    text = { Text("Wake on LAN") },
+                    text = { Text(stringResource(R.string.wake_on_lan)) },
                     enabled = device.macAddress != null,
                     onClick = { actionsMenuExpanded = false; onWakeOnLan() },
                 )
-                DropdownMenuItem(text = { Text("Check Security") }, onClick = { actionsMenuExpanded = false; onCheckSecurity() })
-                DropdownMenuItem(text = { Text("Get Fix Steps") }, onClick = { actionsMenuExpanded = false; onGetFixSteps() })
-                DropdownMenuItem(text = { Text("Open in Terminal") }, onClick = { actionsMenuExpanded = false; onOpenTerminal() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.check_security)) }, onClick = { actionsMenuExpanded = false; onCheckSecurity() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.get_fix_steps)) }, onClick = { actionsMenuExpanded = false; onGetFixSteps() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.open_in_terminal)) }, onClick = { actionsMenuExpanded = false; onOpenTerminal() })
             }
         }
 
-        ActionResultSection(label = "Ports", result = actions.ports) { ports ->
+        ActionResultSection(label = stringResource(R.string.result_ports), result = actions.ports) { ports ->
             if (ports.isEmpty()) {
-                Text("No open ports found in the scanned range.", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.no_open_ports), style = MaterialTheme.typography.bodySmall)
             } else {
                 ports.forEach { port -> Text(portLine(port), style = MaterialTheme.typography.bodySmall) }
             }
@@ -669,7 +715,7 @@ private fun DeviceActionsPanel(
                 info.sysName?.let { Text("sysName: $it", style = MaterialTheme.typography.bodySmall) }
                 info.sysDescr?.let { Text("sysDescr: $it", style = MaterialTheme.typography.bodySmall) }
                 if (info.sysName == null && info.sysDescr == null) {
-                    Text("Device responded but returned no name/description.", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.device_no_name), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -685,7 +731,7 @@ private fun DeviceActionsPanel(
             }
         }
 
-        ActionResultSection(label = "SNMP Community Strings", result = actions.snmpBruteForce) { (community, info) ->
+        ActionResultSection(label = stringResource(R.string.result_snmp_community), result = actions.snmpBruteForce) { (community, info) ->
             Column {
                 Text("Found working community string: \"$community\"", style = MaterialTheme.typography.bodySmall)
                 info.sysName?.let { Text("sysName: $it", style = MaterialTheme.typography.bodySmall) }
@@ -698,9 +744,9 @@ private fun DeviceActionsPanel(
             }
         }
 
-        ActionResultSection(label = "Exposures", result = actions.exposures) { findings ->
+        ActionResultSection(label = stringResource(R.string.result_exposures), result = actions.exposures) { findings ->
             if (findings.isEmpty()) {
-                Text("None of the 16 checked common exposures were found.", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.no_common_exposures), style = MaterialTheme.typography.bodySmall)
             } else {
                 Column {
                     findings.forEach { finding ->
@@ -715,7 +761,7 @@ private fun DeviceActionsPanel(
             }
         }
 
-        ActionResultSection(label = "Default Credentials (Tomcat)", result = actions.defaultCreds) { hit ->
+        ActionResultSection(label = stringResource(R.string.result_default_creds), result = actions.defaultCreds) { hit ->
             Column {
                 Text("⚠ ${hit.product} accepted ${hit.username.ifEmpty { "<blank>" }} / ${hit.password.ifEmpty { "<blank>" }}", style = MaterialTheme.typography.bodySmall)
                 hit.triage?.let { verdict ->
@@ -725,11 +771,11 @@ private fun DeviceActionsPanel(
             }
         }
 
-        ActionResultSection(label = "Wake on LAN", result = actions.wakeOnLan) { message ->
+        ActionResultSection(label = stringResource(R.string.result_wake_on_lan), result = actions.wakeOnLan) { message ->
             Text(message, style = MaterialTheme.typography.bodySmall)
         }
 
-        ActionResultSection(label = "Security", result = actions.securityCheck) { result -> SecurityCheckSummary(result) }
+        ActionResultSection(label = stringResource(R.string.result_security), result = actions.securityCheck) { result -> SecurityCheckSummary(result) }
     }
 }
 
@@ -739,7 +785,7 @@ private fun SecurityCheckSummary(result: SecurityCheckResult) {
         Text("${result.url} — HTTP ${result.statusCode}", style = MaterialTheme.typography.bodySmall)
 
         if (result.presentHeaders.isEmpty()) {
-            Text("No security headers present.", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.no_security_headers), style = MaterialTheme.typography.bodySmall)
         } else {
             result.presentHeaders.forEach { (name, value) ->
                 Text("✓ $name: $value", style = MaterialTheme.typography.bodySmall)

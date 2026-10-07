@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.agent
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,9 +59,9 @@ fun AgentChatScreen(onBack: () -> Unit, viewModel: AgentChatViewModel = viewMode
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("AI Assistant") },
+                title = { Text(stringResource(R.string.ai_assistant)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         },
@@ -72,7 +75,7 @@ fun AgentChatScreen(onBack: () -> Unit, viewModel: AgentChatViewModel = viewMode
                         value = input,
                         onValueChange = { input = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ask about your network…") },
+                        placeholder = { Text(stringResource(R.string.ask_network_hint)) },
                         enabled = !busy,
                         maxLines = 4,
                     )
@@ -81,7 +84,7 @@ fun AgentChatScreen(onBack: () -> Unit, viewModel: AgentChatViewModel = viewMode
                         enabled = !busy && input.isNotBlank(),
                     ) {
                         if (busy) CircularProgressIndicator(modifier = Modifier.padding(4.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                        else Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send))
                     }
                 }
             }

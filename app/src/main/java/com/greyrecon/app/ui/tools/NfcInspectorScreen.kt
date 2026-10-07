@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.tools
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -50,9 +53,9 @@ fun NfcInspectorScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("NFC Inspector") },
+                title = { Text(stringResource(R.string.nfc_inspector)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }
@@ -80,7 +83,7 @@ fun NfcInspectorScreen(onBack: () -> Unit) {
                 )
 
                 if (tag.ndefRecords.isNotEmpty()) {
-                    Text("NDEF records", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp))
+                    Text(stringResource(R.string.ndef_records), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp))
                     tag.ndefRecords.forEach { record ->
                         Text(
                             "[${record.type}] ${record.text}",
@@ -89,7 +92,7 @@ fun NfcInspectorScreen(onBack: () -> Unit) {
                         )
                     }
                 } else {
-                    Text("No NDEF message on this tag.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp))
+                    Text(stringResource(R.string.no_ndef), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp))
                 }
 
                 tag.mifareClassicSector0Dump?.let { dump ->

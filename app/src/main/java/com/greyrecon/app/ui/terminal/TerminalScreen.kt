@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.terminal
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -175,9 +178,9 @@ fun TerminalScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Terminal") },
+                title = { Text(stringResource(R.string.terminal)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }

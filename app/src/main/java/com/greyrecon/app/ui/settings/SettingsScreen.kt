@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.settings
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -81,10 +84,10 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
             )
@@ -105,19 +108,19 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                 FilterChip(
                     selected = aiProvider == AIProviderType.DEEPSEEK,
                     onClick = { aiProvider = AIProviderType.DEEPSEEK; savedMessage = null },
-                    label = { Text("DeepSeek") },
+                    label = { Text(stringResource(R.string.deepseek)) },
                 )
                 FilterChip(
                     selected = aiProvider == AIProviderType.ANTHROPIC,
                     onClick = { aiProvider = AIProviderType.ANTHROPIC; savedMessage = null },
-                    label = { Text("Anthropic (Claude)") },
+                    label = { Text(stringResource(R.string.anthropic_claude)) },
                 )
             }
 
             OutlinedTextField(
                 value = deepseekKey,
                 onValueChange = { deepseekKey = it; savedMessage = null },
-                label = { Text("DeepSeek API key") },
+                label = { Text(stringResource(R.string.deepseek_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -126,7 +129,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             OutlinedTextField(
                 value = anthropicKey,
                 onValueChange = { anthropicKey = it; savedMessage = null },
-                label = { Text("Anthropic API key") },
+                label = { Text(stringResource(R.string.anthropic_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -135,7 +138,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             OutlinedTextField(
                 value = shodanKey,
                 onValueChange = { shodanKey = it; savedMessage = null },
-                label = { Text("Shodan API key") },
+                label = { Text(stringResource(R.string.shodan_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -144,7 +147,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             OutlinedTextField(
                 value = nvdKey,
                 onValueChange = { nvdKey = it; savedMessage = null },
-                label = { Text("NVD API key (optional -- works without one, just at a lower rate limit)") },
+                label = { Text(stringResource(R.string.nvd_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -153,7 +156,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             OutlinedTextField(
                 value = greynoiseKey,
                 onValueChange = { greynoiseKey = it; savedMessage = null },
-                label = { Text("GreyNoise API key (optional -- raises the daily IP-reputation lookup limit)") },
+                label = { Text(stringResource(R.string.greynoise_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -162,7 +165,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             OutlinedTextField(
                 value = abuseipdbKey,
                 onValueChange = { abuseipdbKey = it; savedMessage = null },
-                label = { Text("AbuseIPDB API key (free -- required for IP abuse-reputation checks)") },
+                label = { Text(stringResource(R.string.abuseipdb_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -171,7 +174,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             OutlinedTextField(
                 value = vulncheckKey,
                 onValueChange = { vulncheckKey = it; savedMessage = null },
-                label = { Text("VulnCheck API key (free tier -- required for VulnCheck's own KEV index, a superset of CISA's)") },
+                label = { Text(stringResource(R.string.vulncheck_key)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -191,15 +194,14 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                 },
                 modifier = Modifier.padding(top = 16.dp),
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
 
             savedMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
             HorizontalDivider(modifier = Modifier.padding(top = 24.dp))
 
-            Text(
-                "GreyRecon Pro",
+            Text(stringResource(R.string.greyrecon_pro),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 16.dp),
             )
@@ -220,7 +222,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                     },
                     modifier = Modifier.padding(top = 12.dp),
                 ) {
-                    Text("Upgrade to Pro")
+                    Text(stringResource(R.string.upgrade_to_pro))
                 }
                 purchaseError?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
@@ -230,7 +232,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) {
-                    Text("MCP server", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.mcp_server), style = MaterialTheme.typography.bodyMedium)
                     Switch(
                         checked = mcpEnabled,
                         onCheckedChange = { enabled ->

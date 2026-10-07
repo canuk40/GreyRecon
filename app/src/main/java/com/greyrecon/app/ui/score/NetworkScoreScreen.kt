@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.score
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,9 +38,9 @@ fun NetworkScoreScreen(devices: List<Device>, deviceActions: Map<String, DeviceA
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Network Security Score") },
+                title = { Text(stringResource(R.string.network_security_score)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }

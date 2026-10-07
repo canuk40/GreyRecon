@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.topology
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -58,9 +61,9 @@ fun NetworkTopologyScreen(devices: List<Device>, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Network Topology") },
+                title = { Text(stringResource(R.string.network_topology)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }
@@ -70,7 +73,7 @@ fun NetworkTopologyScreen(devices: List<Device>, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("Run a scan first -- the map is built from the devices it finds.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.run_scan_first), style = MaterialTheme.typography.bodyMedium)
             }
             return@Scaffold
         }
@@ -140,7 +143,7 @@ fun NetworkTopologyScreen(devices: List<Device>, onBack: () -> Unit) {
                         }
                     }
                 },
-                confirmButton = { TextButton(onClick = { selectedCluster = null }) { Text("Close") } },
+                confirmButton = { TextButton(onClick = { selectedCluster = null }) { Text(stringResource(R.string.close)) } },
             )
         }
 
@@ -148,7 +151,7 @@ fun NetworkTopologyScreen(devices: List<Device>, onBack: () -> Unit) {
             val gateway = devices.firstOrNull { it.isGateway }
             AlertDialog(
                 onDismissRequest = { showGatewayInfo = false },
-                title = { Text("Gateway") },
+                title = { Text(stringResource(R.string.gateway)) },
                 text = {
                     Column {
                         Text(gateway?.ipAddress.orEmpty(), style = MaterialTheme.typography.bodyMedium)
@@ -156,7 +159,7 @@ fun NetworkTopologyScreen(devices: List<Device>, onBack: () -> Unit) {
                         gateway?.macAddress?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     }
                 },
-                confirmButton = { TextButton(onClick = { showGatewayInfo = false }) { Text("Close") } },
+                confirmButton = { TextButton(onClick = { showGatewayInfo = false }) { Text(stringResource(R.string.close)) } },
             )
         }
     }

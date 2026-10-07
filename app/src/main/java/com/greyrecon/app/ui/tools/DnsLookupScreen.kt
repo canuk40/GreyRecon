@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.tools
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,9 +49,9 @@ fun DnsLookupScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("DNS Lookup") },
+                title = { Text(stringResource(R.string.dns_lookup)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }
@@ -57,7 +60,7 @@ fun DnsLookupScreen(onBack: () -> Unit) {
             OutlinedTextField(
                 value = domain,
                 onValueChange = { domain = it },
-                label = { Text("Domain") },
+                label = { Text(stringResource(R.string.domain)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -83,7 +86,7 @@ fun DnsLookupScreen(onBack: () -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            ) { Text("Lookup") }
+            ) { Text(stringResource(R.string.lookup)) }
 
             if (loading) CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
             error?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp)) }

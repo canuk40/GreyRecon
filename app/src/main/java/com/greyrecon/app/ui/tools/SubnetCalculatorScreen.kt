@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.tools
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,9 +39,9 @@ fun SubnetCalculatorScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Subnet Calculator") },
+                title = { Text(stringResource(R.string.subnet_calculator)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }
@@ -47,14 +50,14 @@ fun SubnetCalculatorScreen(onBack: () -> Unit) {
             OutlinedTextField(
                 value = ip,
                 onValueChange = { ip = it },
-                label = { Text("IP address") },
+                label = { Text(stringResource(R.string.ip_address)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = prefix,
                 onValueChange = { prefix = it },
-                label = { Text("Prefix length (CIDR)") },
+                label = { Text(stringResource(R.string.prefix_cidr)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
@@ -72,7 +75,7 @@ fun SubnetCalculatorScreen(onBack: () -> Unit) {
                     )
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            ) { Text("Calculate") }
+            ) { Text(stringResource(R.string.calculate)) }
 
             error?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp)) }
 

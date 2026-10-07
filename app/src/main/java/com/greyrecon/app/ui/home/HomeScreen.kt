@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.home
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -36,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.greyrecon.app.R
 
 /**
  * The app's actual landing screen -- branding + a menu of feature entry points,
@@ -52,18 +54,18 @@ import com.greyrecon.app.R
  */
 @Composable
 fun HomeScreen(isPro: Boolean, onNavigate: (String) -> Unit) {
-    var upsellFeature by remember { mutableStateOf<String?>(null) }
+    var upsellFeature by remember { mutableStateOf<Int?>(null) }
 
     upsellFeature?.let { feature ->
         AlertDialog(
             onDismissRequest = { upsellFeature = null },
-            title = { Text("GreyRecon Pro") },
-            text = { Text("$feature is a Pro feature. Scan Network stays free -- Device History, Tools, Terminal, and the AI Assistant unlock with GreyRecon Pro.") },
+            title = { Text(stringResource(R.string.greyrecon_pro)) },
+            text = { Text(stringResource(R.string.upsell_body, stringResource(feature))) },
             confirmButton = {
-                TextButton(onClick = { upsellFeature = null; onNavigate("settings") }) { Text("View Pro") }
+                TextButton(onClick = { upsellFeature = null; onNavigate("settings") }) { Text(stringResource(R.string.view_pro)) }
             },
             dismissButton = {
-                TextButton(onClick = { upsellFeature = null }) { Text("Not now") }
+                TextButton(onClick = { upsellFeature = null }) { Text(stringResource(R.string.not_now)) }
             },
         )
     }
@@ -91,7 +93,7 @@ fun HomeScreen(isPro: Boolean, onNavigate: (String) -> Unit) {
                 modifier = Modifier.padding(top = 12.dp),
             )
             Text(
-                "Network recon & security toolkit",
+                stringResource(R.string.home_tagline),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -100,43 +102,43 @@ fun HomeScreen(isPro: Boolean, onNavigate: (String) -> Unit) {
 
             HomeMenuItem(
                 icon = Icons.Filled.Wifi,
-                label = "Scan Network",
-                description = "Discover and classify devices on this WiFi network",
+                label = stringResource(R.string.scan_network),
+                description = stringResource(R.string.home_scan_desc),
                 onClick = { onNavigate("scan") },
             )
             HomeMenuItem(
                 icon = Icons.Filled.History,
-                label = "Device History",
-                description = "Devices seen over time, custom names, new-device alerts",
+                label = stringResource(R.string.device_history),
+                description = stringResource(R.string.home_history_desc),
                 locked = !isPro,
-                onClick = { if (isPro) onNavigate("history") else upsellFeature = "Device History" },
+                onClick = { if (isPro) onNavigate("history") else upsellFeature = R.string.device_history },
             )
             HomeMenuItem(
                 icon = Icons.Filled.Build,
-                label = "Tools",
-                description = "Subnet calculator, DNS lookup, WHOIS lookup",
+                label = stringResource(R.string.tools),
+                description = stringResource(R.string.home_tools_desc),
                 locked = !isPro,
-                onClick = { if (isPro) onNavigate("tools") else upsellFeature = "Tools" },
+                onClick = { if (isPro) onNavigate("tools") else upsellFeature = R.string.tools },
             )
             HomeMenuItem(
                 icon = Icons.Filled.Settings,
-                label = "Settings",
-                description = "API keys, AI provider, GreyRecon Pro",
+                label = stringResource(R.string.settings),
+                description = stringResource(R.string.home_settings_desc),
                 onClick = { onNavigate("settings") },
             )
             HomeMenuItem(
                 icon = Icons.Filled.Terminal,
-                label = "Terminal",
-                description = "Real interactive shell -- run your own CLI tools directly",
+                label = stringResource(R.string.terminal),
+                description = stringResource(R.string.home_terminal_desc),
                 locked = !isPro,
-                onClick = { if (isPro) onNavigate("terminal") else upsellFeature = "Terminal" },
+                onClick = { if (isPro) onNavigate("terminal") else upsellFeature = R.string.terminal },
             )
             HomeMenuItem(
                 icon = Icons.Filled.SmartToy,
-                label = "AI Assistant",
-                description = "Chat with an AI that runs real scans on your network",
+                label = stringResource(R.string.ai_assistant),
+                description = stringResource(R.string.home_agent_desc),
                 locked = !isPro,
-                onClick = { if (isPro) onNavigate("agent") else upsellFeature = "AI Assistant" },
+                onClick = { if (isPro) onNavigate("agent") else upsellFeature = R.string.ai_assistant },
             )
         }
     }
@@ -160,7 +162,7 @@ private fun HomeMenuItem(icon: ImageVector, label: String, description: String, 
             if (locked) {
                 Icon(
                     Icons.Filled.Lock,
-                    contentDescription = "Requires GreyRecon Pro",
+                    contentDescription = stringResource(R.string.requires_pro),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

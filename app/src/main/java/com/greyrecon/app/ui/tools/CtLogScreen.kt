@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.tools
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,9 +45,9 @@ fun CtLogScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Certificate Transparency") },
+                title = { Text(stringResource(R.string.certificate_transparency)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }
@@ -58,7 +61,7 @@ fun CtLogScreen(onBack: () -> Unit) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("Domain") },
+                label = { Text(stringResource(R.string.domain)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )
@@ -78,14 +81,14 @@ fun CtLogScreen(onBack: () -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            ) { Text("Search") }
+            ) { Text(stringResource(R.string.search)) }
 
             if (loading) CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
             error?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp)) }
 
             result?.let { r ->
                 if (r.subdomains.isEmpty() && r.recentCerts.isEmpty()) {
-                    Text("No certificates found for this domain in CT logs.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp))
+                    Text(stringResource(R.string.no_certs), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 16.dp))
                 } else {
                     Text(
                         "${r.subdomains.size} unique hostnames seen",

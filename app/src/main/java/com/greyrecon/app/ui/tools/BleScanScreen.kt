@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.tools
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -74,9 +77,9 @@ fun BleScanScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("BLE Scan") },
+                title = { Text(stringResource(R.string.ble_scan)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         }

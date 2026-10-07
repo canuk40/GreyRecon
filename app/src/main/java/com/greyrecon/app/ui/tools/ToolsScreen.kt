@@ -1,5 +1,8 @@
 package com.greyrecon.app.ui.tools
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,10 +38,10 @@ fun ToolsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tools") },
+                title = { Text(stringResource(R.string.tools)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
             )
@@ -47,44 +50,44 @@ fun ToolsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             ToolMenuItem(
                 icon = Icons.Filled.Calculate,
-                label = "Subnet Calculator",
-                description = "Network/broadcast address, usable host range, netmask",
+                label = stringResource(R.string.subnet_calculator),
+                description = stringResource(R.string.tool_subnet_desc),
                 onClick = { onNavigate("tools/subnet") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Dns,
-                label = "DNS Lookup",
-                description = "A, AAAA, MX, TXT, NS, CNAME records for a domain",
+                label = stringResource(R.string.dns_lookup),
+                description = stringResource(R.string.tool_dns_desc),
                 onClick = { onNavigate("tools/dns") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Search,
-                label = "WHOIS Lookup",
-                description = "Registration info for a domain or IP",
+                label = stringResource(R.string.whois_lookup),
+                description = stringResource(R.string.tool_whois_desc),
                 onClick = { onNavigate("tools/whois") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.VerifiedUser,
-                label = "Certificate Transparency",
-                description = "Passive subdomain discovery + new-cert monitoring via CT logs",
+                label = stringResource(R.string.certificate_transparency),
+                description = stringResource(R.string.tool_ctlog_desc),
                 onClick = { onNavigate("tools/ctlog") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Warning,
-                label = "Typosquat Check",
-                description = "Checks common typo/homograph variants of a domain for registration",
+                label = stringResource(R.string.typosquat_check),
+                description = stringResource(R.string.tool_typosquat_desc),
                 onClick = { onNavigate("tools/typosquat") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Bluetooth,
-                label = "BLE Scan",
-                description = "Nearby BLE devices, plus AirTag/Tile/SmartTag tracker and BLE-spam-attack detection",
+                label = stringResource(R.string.ble_scan),
+                description = stringResource(R.string.tool_ble_desc),
                 onClick = { onNavigate("tools/ble") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Nfc,
-                label = "NFC Inspector",
-                description = "Read NDEF tags and Mifare Classic tags still on their factory-default key",
+                label = stringResource(R.string.nfc_inspector),
+                description = stringResource(R.string.tool_nfc_desc),
                 onClick = { onNavigate("tools/nfc") },
             )
         }

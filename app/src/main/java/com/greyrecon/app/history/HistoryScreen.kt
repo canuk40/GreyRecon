@@ -1,5 +1,8 @@
 package com.greyrecon.app.history
 
+import androidx.compose.ui.res.stringResource
+import com.greyrecon.app.R
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -46,14 +49,14 @@ fun HistoryScreen(onBack: () -> Unit, onOpenTimeline: () -> Unit, viewModel: His
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Device History") },
+                title = { Text(stringResource(R.string.device_history)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
-                    TextButton(onClick = onOpenTimeline) { Text("Timeline") }
+                    TextButton(onClick = onOpenTimeline) { Text(stringResource(R.string.timeline)) }
                 },
             )
         }
@@ -114,14 +117,14 @@ private fun DeviceHistoryEditor(record: DeviceRecord, viewModel: HistoryViewMode
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Custom name") },
+            label = { Text(stringResource(R.string.custom_name)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
         OutlinedTextField(
             value = notes,
             onValueChange = { notes = it },
-            label = { Text("Notes") },
+            label = { Text(stringResource(R.string.notes)) },
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         )
 
@@ -129,7 +132,7 @@ private fun DeviceHistoryEditor(record: DeviceRecord, viewModel: HistoryViewMode
             TextButton(onClick = {
                 viewModel.setCustomName(record.id, name)
                 viewModel.setNotes(record.id, notes)
-            }) { Text("Save") }
+            }) { Text(stringResource(R.string.save)) }
         }
     }
 }

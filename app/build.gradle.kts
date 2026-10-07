@@ -33,8 +33,8 @@ android {
         // path degrades to its existing `ip neigh show` shell-out and TCP-probe fallbacks at this
         // targetSdk rather than losing discovery outright -- see GreyRecon.md for the full tradeoff.
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.8.1"
+        versionCode = 21
+        versionName = "0.8.9"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -64,7 +64,12 @@ android {
             isDebuggable = true
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -99,6 +104,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
@@ -122,6 +128,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.security:security-crypto:1.1.0")
     implementation("com.android.billingclient:billing-ktx:8.3.0")
+    implementation("com.google.android.play:review:2.0.2") // In-App Review API -- see ReviewPrompter
+    // Same version ObsidianBox Modern ships and serves ads on today -- see ads/BannerAdView.kt
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
 
     // Crash reporting (see GreyRecon.md) -- BoM pins every Firebase artifact's version together,
     // no per-artifact version string needed on the two lines below.
