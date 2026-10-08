@@ -52,6 +52,7 @@ import com.greyrecon.app.engine.tools.UpnpIgdClient
 import com.greyrecon.app.engine.tools.UpnpIgdResult
 import com.greyrecon.app.engine.tools.WhoisLookup
 import com.greyrecon.app.engine.wol.WakeOnLan
+import com.greyrecon.app.engine.discovery.NetworkIdentity
 import com.greyrecon.app.history.DeviceHistoryStore
 import java.net.URL
 import kotlinx.coroutines.flow.toList
@@ -100,7 +101,10 @@ class ScanDataSource(private val context: Context) {
         }
 
         lastScan = found.values.toList()
-        historyStore.recordScanResults(lastScan)
+        NetworkIdentity.resolve(context)?.let { identity ->
+            historyStore.registerNetwork(identity)
+            historyStore.recordScanResults(identity.key, lastScan)
+        }
         return lastScan
     }
 

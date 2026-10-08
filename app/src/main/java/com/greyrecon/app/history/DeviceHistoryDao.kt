@@ -9,14 +9,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface DeviceHistoryDao {
 
-    @Query("SELECT * FROM device_history ORDER BY lastSeenAt DESC")
-    fun observeAll(): Flow<List<DeviceRecord>>
+    @Query("SELECT * FROM device_history WHERE networkKey = :networkKey ORDER BY lastSeenAt DESC")
+    fun observeForNetwork(networkKey: String): Flow<List<DeviceRecord>>
 
-    @Query("SELECT id FROM device_history")
-    suspend fun getAllIds(): List<String>
+    @Query("SELECT id FROM device_history WHERE networkKey = :networkKey")
+    suspend fun getIdsForNetwork(networkKey: String): List<String>
 
-    @Query("SELECT * FROM device_history WHERE isOnline = 1")
-    suspend fun getOnlineRecords(): List<DeviceRecord>
+    @Query("SELECT * FROM device_history WHERE isOnline = 1 AND networkKey = :networkKey")
+    suspend fun getOnlineRecords(networkKey: String): List<DeviceRecord>
 
     @Query("UPDATE device_history SET isOnline = :online WHERE id = :id")
     suspend fun setOnline(id: String, online: Boolean)

@@ -28,6 +28,7 @@ import com.greyrecon.app.engine.shodan.ShodanClient
 import com.greyrecon.app.engine.snmp.SnmpClient
 import com.greyrecon.app.engine.snmp.SnmpCommunityWordlist
 import com.greyrecon.app.engine.wol.WakeOnLan
+import com.greyrecon.app.engine.discovery.NetworkIdentity
 import com.greyrecon.app.history.DeviceHistoryStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -35,6 +36,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 sealed class ScanState {
@@ -324,7 +327,13 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             }
             val finalDevices = discoveredDevices.values.toList()
             _state.value = ScanState.Done(finalDevices)
-            historyStore.recordScanResults(finalDevices)
+            // History is per-network; without an identity there is nothing safe to attribute this
+            // scan to, so skip recording rather than pooling it into another network's baseline.
+            val identity = withContext(Dispatchers.IO) { NetworkIdentity.resolve(context) }
+            if (identity != null) {
+                historyStore.registerNetwork(identity)
+                historyStore.recordScanResults(identity.key, finalDevices)
+            }
         }
     }
 }

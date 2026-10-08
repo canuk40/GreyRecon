@@ -103,6 +103,14 @@ android {
     }
 }
 
+ksp {
+    // Emit Room's expected schema JSON per version, and keep it in git. Destructive fallback is
+    // enabled on this database, so a migration that does not produce byte-identical schema does
+    // not throw -- it silently deletes the user's history instead. Having the expected schema
+    // checked in is what makes a hand-written migration verifiable rather than hopeful.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.core:core-ktx:1.13.1")
