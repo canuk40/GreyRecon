@@ -36,7 +36,10 @@ object NetworkScan {
         } else {
             device
         }
-        val withGateway = withVendor.copy(isGateway = withVendor.ipAddress == subnet.gatewayAddress)
+        val withGateway = withVendor.copy(
+            isGateway = withVendor.ipAddress == subnet.gatewayAddress,
+            hasRandomizedMac = MacAddressFacts.isLocallyAdministered(withVendor.macAddress),
+        )
         return withGateway.copy(deviceType = DeviceClassifier.classify(withGateway))
     }
 

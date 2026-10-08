@@ -25,6 +25,7 @@ import com.greyrecon.app.engine.snmp.SnmpCommunityWordlist
 import com.greyrecon.app.engine.wol.WakeOnLan
 import com.greyrecon.app.engine.discovery.NetworkIdentity
 import com.greyrecon.app.engine.discovery.NetworkScan
+import com.greyrecon.app.engine.scan.HttpBannerProbe
 import com.greyrecon.app.history.DeviceHistoryStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -81,6 +82,16 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                     val reclassified = withPorts.copy(deviceType = DeviceClassifier.classify(withPorts))
                     discoveredDevices[ipAddress] = reclassified
                     reEmitCurrentState()
+
+                    // Now that the open ports are known, ask whatever is on the web port what it
+                    // is. "80/tcp open" helps nobody decide anything; "Synology DiskStation" does,
+                    // and it is what makes the CVE lookups targetable rather than generic.
+                    val banner = HttpBannerProbe.probe(ipAddress, ports.map { p -> p.number })
+                    if (banner != null) {
+                        discoveredDevices[ipAddress] = (discoveredDevices[ipAddress] ?: reclassified)
+                            .copy(httpBanner = banner)
+                        reEmitCurrentState()
+                    }
                 }
             } catch (e: Exception) {
                 updateActions(ipAddress) { it.copy(ports = ActionResult.Error(e.message ?: "Port scan failed")) }

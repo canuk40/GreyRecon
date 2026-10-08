@@ -19,6 +19,18 @@ data class Device(
     /** True if this IP matches the WiFi network's default gateway -- a 100% reliable "this is the router" signal, no heuristics needed. */
     val isGateway: Boolean = false,
     val deviceType: DeviceType = DeviceType.UNKNOWN,
+    /**
+     * True when [macAddress] has the locally-administered bit set, i.e. it is a randomised
+     * privacy address rather than a real burned-in one. Every current phone and laptop randomises
+     * per network by default, so these are common -- and because a randomised MAC has no OUI, the
+     * vendor lookup returns nothing and the device would otherwise show up as an anonymous blank
+     * row. Saying "randomised MAC" is both more accurate and more useful than saying nothing.
+     */
+    val hasRandomizedMac: Boolean = false,
+    /** Model/firmware details parsed out of mDNS TXT records, e.g. "Philips hue bridge 2.1". */
+    val modelInfo: String? = null,
+    /** Server header or page title from an open HTTP(S) port, e.g. "nginx/1.24.0" or "Synology DSM". */
+    val httpBanner: String? = null,
 )
 
 enum class DeviceType {

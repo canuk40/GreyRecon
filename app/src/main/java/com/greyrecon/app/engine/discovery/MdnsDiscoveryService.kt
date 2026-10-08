@@ -52,6 +52,9 @@ class MdnsDiscoveryService(
                                 vendor = null,
                                 discoveredBy = setOf(DiscoveryMethod.MDNS),
                                 mdnsServiceTypes = setOfNotNull(info.serviceType),
+                                // The TXT record came back with this resolve and was being
+                                // discarded; it usually carries the actual model and firmware.
+                                modelInfo = MdnsTxtFacts.describe(info.attributes),
                             )
                         )
                     }

@@ -574,16 +574,28 @@ private fun DeviceList(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(deviceTypeLabel(device.deviceType), style = MaterialTheme.typography.labelLarge)
                     Text(
-                        listOfNotNull(device.ipAddress, device.vendor).joinToString(" — "),
+                        // modelInfo comes from the device's own mDNS TXT record, so it beats a
+                        // vendor name derived from the MAC prefix whenever it is present.
+                        listOfNotNull(device.ipAddress, device.modelInfo ?: device.vendor).joinToString(" — "),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
                 val subtitle = listOfNotNull(
                     device.hostname,
                     device.macAddress,
+                    // A randomised MAC has no OUI, so the vendor lookup finds nothing and the row
+                    // would otherwise read as an anonymous blank. Saying why it is unidentifiable
+                    // is more useful, and more accurate, than saying nothing.
+                    if (device.hasRandomizedMac) "randomised MAC" else null,
                     device.discoveredBy.joinToString(", ") { it.name },
                 ).joinToString(" · ")
                 Text(subtitle, style = MaterialTheme.typography.bodySmall)
+                device.httpBanner?.let { banner ->
+                    Text(banner, style = MaterialTheme.typography.bodySmall)
+                }
+                if (device.modelInfo != null && device.vendor != null) {
+                    Text(device.vendor, style = MaterialTheme.typography.bodySmall)
+                }
 
                 if (expandedIp == device.ipAddress) {
                     DeviceActionsPanel(
