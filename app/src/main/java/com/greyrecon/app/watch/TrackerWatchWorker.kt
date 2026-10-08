@@ -3,6 +3,7 @@ package com.greyrecon.app.watch
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -52,6 +53,10 @@ class TrackerWatchWorker(
     override suspend fun doWork(): Result {
         val context = applicationContext
         if (!hasScanPermission(context)) return Result.success()
+        // Bluetooth off is the single most likely reason this does nothing, and without the check
+        // the worker runs, scans nothing, succeeds, and reports no trackers -- indistinguishable
+        // from "you are not being followed". Exactly the failure the WiFi analyzer had.
+        if (!isBluetoothEnabled(context)) return Result.success()
 
         val store = TrackerSightingStore(context)
 
@@ -76,6 +81,10 @@ class TrackerWatchWorker(
 
         return Result.success()
     }
+
+    private fun isBluetoothEnabled(context: Context): Boolean = runCatching {
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter?.isEnabled == true
+    }.getOrDefault(false)
 
     private fun hasScanPermission(context: Context): Boolean =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

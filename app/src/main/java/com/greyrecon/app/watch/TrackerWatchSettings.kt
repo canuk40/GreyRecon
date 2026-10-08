@@ -1,6 +1,7 @@
 package com.greyrecon.app.watch
 
 import android.Manifest
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -44,6 +45,10 @@ fun TrackerWatchSettings() {
         if (ok && enabled) TrackerWatchWorker.schedule(context)
     }
 
+    val bluetoothOn = runCatching {
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter?.isEnabled == true
+    }.getOrDefault(false)
+
     Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text("Tracker Watch", style = MaterialTheme.typography.bodyMedium)
@@ -71,6 +76,13 @@ fun TrackerWatchSettings() {
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 4.dp),
         )
+        if (enabled && !bluetoothOn) {
+            Text(
+                "Bluetooth is turned off, so nothing can be scanned for. Tracker Watch will stay idle until you turn it on.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
         if (enabled && !granted) {
             Text(
                 "Bluetooth scanning permission is required for this to run.",
