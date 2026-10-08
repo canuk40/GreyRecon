@@ -95,7 +95,23 @@ private val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
-@Database(entities = [DeviceRecord::class, NetworkEvent::class, TrackerSighting::class, NetworkProfile::class], version = 4, exportSchema = true)
+/**
+ * Adds `alertedAt` so the tracker watcher warns about a following tracker once rather than every
+ * cycle. Nullable, so a plain ADD COLUMN with no DEFAULT is exactly what Room expects here and the
+ * table does not need rebuilding (contrast MIGRATION_3_4, where the new columns were NOT NULL).
+ *
+ * Also resets sightingCount. Its meaning changed in v5 from "advertisement packets observed" to
+ * "distinct scan sessions"; carrying the old values forward would leave every pre-existing row
+ * with an inflated count and trip the follow-detection threshold immediately.
+ */
+private val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `tracker_sightings` ADD COLUMN `alertedAt` INTEGER")
+        db.execSQL("UPDATE `tracker_sightings` SET `sightingCount` = 1")
+    }
+}
+
+@Database(entities = [DeviceRecord::class, NetworkEvent::class, TrackerSighting::class, NetworkProfile::class], version = 5, exportSchema = true)
 abstract class GreyReconDatabase : RoomDatabase() {
     abstract fun deviceHistoryDao(): DeviceHistoryDao
     abstract fun networkEventDao(): NetworkEventDao
@@ -112,7 +128,7 @@ abstract class GreyReconDatabase : RoomDatabase() {
                     GreyReconDatabase::class.java,
                     "greyrecon.db",
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     // Safety net for any *other* schema drift this explicit migration doesn't
                     // cover -- real testers now have data worth keeping, but this is still
                     // pre-1.0 enough that a clean reset beats a crash if something's missed.

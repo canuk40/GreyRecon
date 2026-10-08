@@ -23,5 +23,13 @@ data class TrackerSighting(
     val trackerType: String,
     val firstSeenAt: Long,
     val lastSeenAt: Long,
+    /**
+     * Number of distinct *scan sessions* this address was seen in -- not advertisement packets.
+     * Before schema v5 this counted every `onScanResult` callback, so a single AirTag sitting in
+     * an eight-second scan could log dozens of "sightings" and the number meant nothing. The
+     * follow-detection heuristic needs sessions, so recording is now deduplicated per session.
+     */
     val sightingCount: Int,
+    /** When the user was last warned about this address, so a watched tracker alerts once, not every cycle. */
+    val alertedAt: Long? = null,
 )

@@ -57,10 +57,15 @@ fun BleScanScreen(onBack: () -> Unit) {
         devices = emptyList()
         sightings = emptyMap()
         scope.launch {
+            // BLE advertisements repeat many times a second, so record each address at most
+            // once per scan session -- sightingCount is a session count, not a packet count.
+            val recordedThisSession = mutableSetOf<String>()
             BleScanner(context).scan().collect { found ->
                 devices = (devices.filter { it.address != found.address } + found).sortedByDescending { it.rssi }
                 found.trackerType?.let { type ->
-                    sightings = sightings + (found.address to sightingStore.recordSighting(found.address, type))
+                    if (recordedThisSession.add(found.address)) {
+                        sightings = sightings + (found.address to sightingStore.recordSighting(found.address, type))
+                    }
                 }
             }
             scanning = false
