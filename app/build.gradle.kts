@@ -165,6 +165,7 @@ dependencies {
     // JitPack's build history for termux-app is genuinely unreliable for its native (ndk-build)
     // modules on many tags. Apache-2.0, carved out of termux-app's GPLv3 by its own LICENSE.md.
     implementation(project(":terminal-view"))
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")

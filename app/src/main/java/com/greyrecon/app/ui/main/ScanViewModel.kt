@@ -7,13 +7,8 @@ import com.greyrecon.app.ai.AIProviderConfig
 import com.greyrecon.app.ai.AIProviderFactory
 import com.greyrecon.app.ai.AIProviderType
 import com.greyrecon.app.ai.FindingTriage
-import com.greyrecon.app.engine.discovery.ActiveScanDiscoveryService
-import com.greyrecon.app.engine.discovery.ArpTableDiscoveryService
 import com.greyrecon.app.engine.discovery.DeviceClassifier
-import com.greyrecon.app.engine.discovery.DiscoveryEngine
-import com.greyrecon.app.engine.discovery.MdnsDiscoveryService
 import com.greyrecon.app.engine.discovery.SubnetInfo
-import com.greyrecon.app.engine.discovery.UpnpDiscoveryService
 import com.greyrecon.app.engine.discovery.VendorLookup
 import com.greyrecon.app.engine.cve.EpssClient
 import com.greyrecon.app.engine.cve.KevClient
@@ -29,6 +24,7 @@ import com.greyrecon.app.engine.snmp.SnmpClient
 import com.greyrecon.app.engine.snmp.SnmpCommunityWordlist
 import com.greyrecon.app.engine.wol.WakeOnLan
 import com.greyrecon.app.engine.discovery.NetworkIdentity
+import com.greyrecon.app.engine.discovery.NetworkScan
 import com.greyrecon.app.history.DeviceHistoryStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -301,27 +297,14 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val engine = DiscoveryEngine(
-            listOf(
-                ArpTableDiscoveryService(),
-                MdnsDiscoveryService(context),
-                UpnpDiscoveryService(context),
-                ActiveScanDiscoveryService(subnet),
-            )
-        )
+        val engine = NetworkScan.engineFor(context, subnet)
 
         discoveredDevices.clear()
         _state.value = ScanState.Scanning(emptyList())
 
         viewModelScope.launch {
             engine.discover().collect { device ->
-                val enriched = if (device.vendor == null && device.macAddress != null) {
-                    device.copy(vendor = vendorLookup.lookup(device.macAddress))
-                } else {
-                    device
-                }
-                val withGateway = enriched.copy(isGateway = enriched.ipAddress == subnet.gatewayAddress)
-                val classified = withGateway.copy(deviceType = DeviceClassifier.classify(withGateway))
+                val classified = NetworkScan.enrich(device, subnet, vendorLookup)
                 discoveredDevices[classified.ipAddress] = classified
                 _state.value = ScanState.Scanning(discoveredDevices.values.toList())
             }

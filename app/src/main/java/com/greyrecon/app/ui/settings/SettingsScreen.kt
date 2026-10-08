@@ -2,6 +2,7 @@ package com.greyrecon.app.ui.settings
 
 import androidx.compose.ui.res.stringResource
 import com.greyrecon.app.R
+import com.greyrecon.app.watch.NetworkWatchSettings
 
 import android.Manifest
 import android.content.Intent
@@ -208,7 +209,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
 
             if (!isPro) {
                 Text(
-                    "Unlock Device History, Tools (subnet calculator, DNS/WHOIS lookup, CT monitoring, typosquat check, BLE scan), the Terminal, the AI Assistant (chat with an AI that runs real scans using your own API key), and the MCP server -- expose scan results as tools your own self-hosted nanobot instance (or any MCP client) can query conversationally. Scan Network stays free.",
+                    "Unlock Network Watch (background scanning that alerts you when an unrecognised device joins, even with the app closed), Device History, Tools (subnet calculator, DNS/WHOIS lookup, CT monitoring, typosquat check, BLE scan), the Terminal, the AI Assistant (chat with an AI that runs real scans using your own API key), and the MCP server -- expose scan results as tools your own self-hosted nanobot instance (or any MCP client) can query conversationally. Scan Network stays free.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -228,6 +229,8 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
                     Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                 }
             } else {
+                NetworkWatchSettings()
+
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
