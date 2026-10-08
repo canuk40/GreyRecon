@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +39,7 @@ import com.greyrecon.app.R
 import com.greyrecon.app.engine.discovery.VendorLookup
 import com.greyrecon.app.engine.wifi.AccessPoint
 import com.greyrecon.app.engine.wifi.AirspaceFinding
+import com.greyrecon.app.engine.wifi.ApScanOutcome
 import com.greyrecon.app.engine.wifi.WifiAirspaceAnalysis
 import com.greyrecon.app.engine.wifi.WifiApScanner
 import kotlinx.coroutines.delay
@@ -61,22 +64,31 @@ fun WifiAnalyzerScreen(onBack: () -> Unit) {
     var findings by remember { mutableStateOf<List<AirspaceFinding>>(emptyList()) }
     var refreshing by remember { mutableStateOf(false) }
 
+    var outcome by remember { mutableStateOf<ApScanOutcome?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { ok -> granted = ok }
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted = scanner.hasPermission() }
+
+    fun apply(result: ApScanOutcome) {
+        outcome = result
+        if (result is ApScanOutcome.Success) {
+            accessPoints = result.accessPoints
+            findings = WifiAirspaceAnalysis.analyse(result.accessPoints)
+        } else {
+            accessPoints = emptyList()
+            findings = emptyList()
+        }
+    }
 
     suspend fun refresh() {
-        if (!granted) return
         refreshing = true
         // startScan() is deprecated and throttled to roughly four calls per two minutes, so the
         // cached list is shown immediately and the fresh sweep is treated as a bonus rather than
         // something to block on.
-        accessPoints = scanner.accessPoints { bssid -> vendorLookup.lookup(bssid) }
-        findings = WifiAirspaceAnalysis.analyse(accessPoints)
-        if (scanner.requestScan()) {
+        apply(scanner.accessPoints { bssid -> vendorLookup.lookup(bssid) })
+        if (outcome is ApScanOutcome.Success && scanner.requestScan()) {
             delay(3_000)
-            accessPoints = scanner.accessPoints { bssid -> vendorLookup.lookup(bssid) }
-            findings = WifiAirspaceAnalysis.analyse(accessPoints)
+            apply(scanner.accessPoints { bssid -> vendorLookup.lookup(bssid) })
         }
         refreshing = false
     }
@@ -101,16 +113,23 @@ fun WifiAnalyzerScreen(onBack: () -> Unit) {
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when {
-                !granted -> PermissionPrompt(
-                    onRequest = { permissionLauncher.launch(scanner.requiredPermission()) },
+            when (val current = outcome) {
+                ApScanOutcome.WifiOff -> Blocked(
+                    "WiFi is turned off, so nearby networks cannot be listed.",
+                    null, null, null,
                 )
 
-                !scanner.isWifiEnabled() -> Text(
-                    "WiFi is turned off, so nearby networks cannot be listed.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp),
-                )
+                ApScanOutcome.MissingPermission -> Blocked(
+                    "Listing nearby access points needs permission to see WiFi devices around you.",
+                    "Android still enforces a location permission on WiFi scan results, even for apps that declare the newer \"nearby devices\" permission and promise never to derive location from them -- which GreyRecon does. The access point list is used for channels, signal and security only.",
+                    "Grant permission",
+                ) { permissionLauncher.launch(scanner.requiredPermissions()) }
+
+                ApScanOutcome.LocationServicesOff -> Blocked(
+                    "Location services are switched off on this device.",
+                    "Android refuses WiFi scan results entirely while the system Location toggle is off, regardless of what permissions an app holds. GreyRecon never reads your location -- the platform simply will not return the access point list until that switch is on.",
+                    "Open location settings",
+                ) { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
 
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                     if (findings.isNotEmpty()) {
@@ -118,10 +137,10 @@ fun WifiAnalyzerScreen(onBack: () -> Unit) {
                         item { HorizontalDivider() }
                     }
                     items(accessPoints, key = { it.bssid }) { ap -> AccessPointRow(ap) }
-                    if (accessPoints.isEmpty()) {
+                    if (accessPoints.isEmpty() && current is ApScanOutcome.Success) {
                         item {
                             Text(
-                                "No access points found yet. Android caches WiFi scan results and limits how often an app may ask for a fresh sweep, so this can take a moment.",
+                                "No access points nearby. Android caches scan results and limits how often an app may request a fresh sweep, so this can take a moment.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(16.dp),
                             )
@@ -133,19 +152,17 @@ fun WifiAnalyzerScreen(onBack: () -> Unit) {
     }
 }
 
+/** One shape for every reason the list can be empty, so none of them is silent. */
 @Composable
-private fun PermissionPrompt(onRequest: () -> Unit) {
+private fun Blocked(headline: String, explanation: String?, actionLabel: String?, onAction: (() -> Unit)? = null) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text(
-            "Listing nearby access points needs permission to see WiFi devices around you.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Text(
-            "GreyRecon declares this as \"never for location\" -- the access point list is used for channels, signal and security only, and is never used to work out where you are.",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        Button(onClick = onRequest, modifier = Modifier.padding(top = 16.dp)) { Text("Grant permission") }
+        Text(headline, style = MaterialTheme.typography.bodyMedium)
+        explanation?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+        }
+        if (actionLabel != null && onAction != null) {
+            Button(onClick = onAction, modifier = Modifier.padding(top = 16.dp)) { Text(actionLabel) }
+        }
     }
 }
 

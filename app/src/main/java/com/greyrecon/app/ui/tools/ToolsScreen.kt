@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Dns
@@ -84,6 +85,12 @@ fun ToolsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 label = stringResource(R.string.wifi_analyzer),
                 description = stringResource(R.string.tool_wifi_desc),
                 onClick = { onNavigate("tools/wifi") },
+            )
+            ToolMenuItem(
+                icon = Icons.Filled.NetworkCheck,
+                label = stringResource(R.string.connection_quality),
+                description = stringResource(R.string.tool_quality_desc),
+                onClick = { onNavigate("tools/quality") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Bluetooth,

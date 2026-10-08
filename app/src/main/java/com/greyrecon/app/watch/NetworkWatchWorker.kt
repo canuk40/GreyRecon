@@ -20,6 +20,7 @@ import com.greyrecon.app.engine.discovery.NetworkIdentity
 import com.greyrecon.app.engine.discovery.NetworkScan
 import com.greyrecon.app.engine.discovery.VendorLookup
 import com.greyrecon.app.history.DeviceHistoryStore
+import com.greyrecon.app.integrations.WebhookNotifier
 import java.util.concurrent.TimeUnit
 
 /**
@@ -64,9 +65,23 @@ class NetworkWatchWorker(
         }
 
         val newDevices = store.recordScanResults(identity.key, devices, silent = true)
-        if (newDevices.isNotEmpty()) notifySummary(context, profile.label, newDevices.size, newDevices.first().let {
-            it.vendor ?: it.hostname ?: it.ipAddress
-        })
+        if (newDevices.isNotEmpty()) {
+            val first = newDevices.first()
+            val firstLabel = first.modelInfo ?: first.vendor ?: first.hostname ?: first.ipAddress
+            notifySummary(context, profile.label, newDevices.size, firstLabel)
+
+            // Best-effort push to the user's own automation. Never allowed to fail the scan: a
+            // broken webhook must not turn into a retry loop that re-scans the network.
+            runCatching {
+                WebhookNotifier(context).post(
+                    event = "new_device",
+                    networkLabel = profile.label,
+                    detail = if (newDevices.size == 1) "1 new device" else "${newDevices.size} new devices",
+                    deviceIp = first.ipAddress,
+                    deviceLabel = firstLabel,
+                )
+            }
+        }
 
         return Result.success()
     }

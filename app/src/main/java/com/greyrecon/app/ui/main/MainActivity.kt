@@ -221,6 +221,9 @@ class MainActivity : ComponentActivity() {
                     composable("tools/typosquat") {
                         com.greyrecon.app.ui.tools.TyposquatScreen(onBack = { navController.popBackStack() })
                     }
+                    composable("tools/quality") {
+                        com.greyrecon.app.ui.tools.ConnectionQualityScreen(onBack = { navController.popBackStack() })
+                    }
                     composable("tools/wifi") {
                         com.greyrecon.app.ui.tools.WifiAnalyzerScreen(onBack = { navController.popBackStack() })
                     }

@@ -3,10 +3,20 @@ package com.greyrecon.app.engine.wifi
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
+import androidx.core.location.LocationManagerCompat
+
+/** Why a scan produced nothing, so the UI can say something true instead of guessing. */
+sealed interface ApScanOutcome {
+    data class Success(val accessPoints: List<AccessPoint>) : ApScanOutcome
+    data object MissingPermission : ApScanOutcome
+    data object LocationServicesOff : ApScanOutcome
+    data object WifiOff : ApScanOutcome
+}
 
 /** One nearby access point, normalised out of the platform's [ScanResult]. */
 data class AccessPoint(
@@ -58,10 +68,20 @@ enum class Security(val label: String, val rank: Int) {
  * scanned the LAN it was attached to and nothing else. This is the missing half, and it is also
  * what makes the store title honest.
  *
- * Permission handling is the interesting part. On API 33+ this uses NEARBY_WIFI_DEVICES declared
- * with `neverForLocation`, so the AP list costs no location permission at all; below 33 that
- * permission does not exist and the platform gates scan results on ACCESS_FINE_LOCATION, which is
- * already declared for BLE on old releases.
+ * Permission handling turned out to be the hard part, and the obvious design was wrong.
+ *
+ * NEARBY_WIFI_DEVICES with `neverForLocation` is documented as the API 33+ replacement for a
+ * location permission, and that is how this was first written. On a real Android 15 device it is
+ * not sufficient: with NEARBY_WIFI_DEVICES granted and ACCESS_FINE_LOCATION denied, the platform
+ * refuses with `SecurityException: UID ... has no location permission`, and with location
+ * permission held but the device Location toggle off it refuses with `Location mode is disabled
+ * for the device`. Verified in logcat against WifiService on Android 15.
+ *
+ * So `getScanResults()` in practice needs ACCESS_FINE_LOCATION *and* Location services switched
+ * on, and NEARBY_WIFI_DEVICES is requested as well because it is the correct forward-looking
+ * declaration and is accepted on some builds. Both failure modes are reported distinctly rather
+ * than collapsing into an empty list, because an empty list with no explanation is exactly how
+ * this bug hid in the first place: the screen opened, looked fine, and silently did nothing.
  *
  * [getScanResults] returns the system's most recent cache, which is usually fine and costs
  * nothing. [requestScan] asks for a fresh sweep, but `startScan()` is deprecated and hard-throttled
@@ -75,15 +95,36 @@ class WifiApScanner(private val context: Context) {
         context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     }
 
-    fun requiredPermission(): String =
+    /**
+     * Everything worth asking for. ACCESS_FINE_LOCATION is the one the platform actually enforces
+     * today; NEARBY_WIFI_DEVICES is requested alongside it on API 33+ because it is the correct
+     * declaration going forward and some builds do accept it on its own.
+     */
+    fun requiredPermissions(): Array<String> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.NEARBY_WIFI_DEVICES
+            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES, Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
-            Manifest.permission.ACCESS_FINE_LOCATION
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         }
 
+    /**
+     * Gated on ACCESS_FINE_LOCATION specifically, not on "any of the requested permissions".
+     *
+     * Measured behaviour on Android 15: with NEARBY_WIFI_DEVICES granted and location denied, the
+     * platform logs `Permission violation - getScanResults not allowed ... has no location
+     * permission` and returns an **empty list** rather than throwing. An `any {}` check therefore
+     * passed, the empty list was taken at face value, and the screen cheerfully reported "no
+     * access points nearby" on a device surrounded by them. Checking the permission the platform
+     * actually enforces is the only way to tell the two apart, because the return value cannot.
+     */
     fun hasPermission(): Boolean =
-        ActivityCompat.checkSelfPermission(context, requiredPermission()) == PackageManager.PERMISSION_GRANTED
+        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    /** The platform refuses scan results outright when the device Location toggle is off. */
+    fun isLocationServicesEnabled(): Boolean = runCatching {
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        LocationManagerCompat.isLocationEnabled(lm)
+    }.getOrDefault(false)
 
     fun isWifiEnabled(): Boolean = runCatching { wifiManager.isWifiEnabled }.getOrDefault(false)
 
@@ -91,11 +132,28 @@ class WifiApScanner(private val context: Context) {
     @Suppress("DEPRECATION")
     fun requestScan(): Boolean = runCatching { wifiManager.startScan() }.getOrDefault(false)
 
-    fun accessPoints(vendorFor: (String) -> String?): List<AccessPoint> {
-        if (!hasPermission()) return emptyList()
-        val results = runCatching { wifiManager.scanResults }.getOrDefault(emptyList())
-        return results.mapNotNull { it.toAccessPoint(vendorFor) }
-            .sortedByDescending { it.signalDbm }
+    /**
+     * Distinguishes "nothing is nearby" from "the platform refused", because they look identical
+     * from an empty list and only one of them is the user's problem to fix.
+     */
+    fun accessPoints(vendorFor: (String) -> String?): ApScanOutcome {
+        if (!isWifiEnabled()) return ApScanOutcome.WifiOff
+        if (!hasPermission()) return ApScanOutcome.MissingPermission
+        if (!isLocationServicesEnabled()) return ApScanOutcome.LocationServicesOff
+
+        val results = try {
+            wifiManager.scanResults
+        } catch (e: SecurityException) {
+            // The message is the only way to tell the two refusals apart.
+            return if (e.message?.contains("Location mode", ignoreCase = true) == true) {
+                ApScanOutcome.LocationServicesOff
+            } else {
+                ApScanOutcome.MissingPermission
+            }
+        }
+        return ApScanOutcome.Success(
+            results.mapNotNull { it.toAccessPoint(vendorFor) }.sortedByDescending { it.signalDbm }
+        )
     }
 
     @Suppress("DEPRECATION")

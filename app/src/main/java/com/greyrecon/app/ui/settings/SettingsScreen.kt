@@ -2,6 +2,7 @@ package com.greyrecon.app.ui.settings
 
 import androidx.compose.ui.res.stringResource
 import com.greyrecon.app.R
+import com.greyrecon.app.integrations.WebhookSettings
 import com.greyrecon.app.watch.NetworkWatchSettings
 import com.greyrecon.app.watch.TrackerWatchSettings
 
@@ -210,7 +211,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
 
             if (!isPro) {
                 Text(
-                    "Unlock Network Watch (background scanning that alerts you when an unrecognised device joins, even with the app closed), Tracker Watch (background Bluetooth monitoring for item-finder trackers that keep turning up near you), Device History, Tools (subnet calculator, DNS/WHOIS lookup, CT monitoring, typosquat check, BLE scan), the Terminal, the AI Assistant (chat with an AI that runs real scans using your own API key), and the MCP server -- expose scan results as tools your own self-hosted nanobot instance (or any MCP client) can query conversationally. Scan Network stays free.",
+                    "Unlock Network Watch (background scanning that alerts you when an unrecognised device joins, even with the app closed), Tracker Watch (background Bluetooth monitoring for item-finder trackers that keep turning up near you), Device History, Tools (WiFi analyzer with rogue access point detection, connection quality, subnet calculator, DNS/WHOIS lookup, CT monitoring, typosquat check, BLE scan), event webhooks, the Terminal, the AI Assistant (chat with an AI that runs real scans using your own API key), and the MCP server -- expose scan results as tools your own self-hosted nanobot instance (or any MCP client) can query conversationally. Scan Network stays free.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -232,6 +233,7 @@ fun SettingsScreen(keyStore: SecureKeyStore, billingManager: BillingManager, onB
             } else {
                 NetworkWatchSettings()
                 TrackerWatchSettings()
+                WebhookSettings()
 
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
