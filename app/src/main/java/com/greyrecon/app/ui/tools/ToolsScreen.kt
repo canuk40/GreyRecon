@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Nfc
@@ -77,6 +78,12 @@ fun ToolsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 label = stringResource(R.string.typosquat_check),
                 description = stringResource(R.string.tool_typosquat_desc),
                 onClick = { onNavigate("tools/typosquat") },
+            )
+            ToolMenuItem(
+                icon = Icons.Filled.Wifi,
+                label = stringResource(R.string.wifi_analyzer),
+                description = stringResource(R.string.tool_wifi_desc),
+                onClick = { onNavigate("tools/wifi") },
             )
             ToolMenuItem(
                 icon = Icons.Filled.Bluetooth,

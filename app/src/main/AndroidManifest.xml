@@ -5,7 +5,16 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
-    <!-- Required by Android to read WiFi scan results (SSID/BSSID), not for tracking -->
+    <!-- Reading nearby WiFi access points (WifiAnalyzerScreen). On API 33+ this is
+         NEARBY_WIFI_DEVICES with neverForLocation, which is the whole point: the AP list is used
+         to show channels, signal and security posture, never to derive where the user is, and
+         asserting that lets the feature work without a location permission at all on modern
+         devices. Below 33 that permission does not exist and Android gates scan results on
+         ACCESS_FINE_LOCATION instead, so it stays declared - it is also what BLE scanning needs
+         on API <= 30. NOTE: ACCESS_FINE_LOCATION cannot be capped with maxSdkVersion while
+         MainActivity still gates the LAN scan on it; see the scan-permission discussion. -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <!-- BLE discovery. Legacy permissions capped at maxSdkVersion 30 for devices still on that
          legacy permission model (minSdk is 26); targetSdk 36 means BLUETOOTH_SCAN is the real
