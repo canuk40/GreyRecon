@@ -7,13 +7,8 @@ import com.greyrecon.app.ai.AIProviderConfig
 import com.greyrecon.app.ai.AIProviderFactory
 import com.greyrecon.app.ai.AIProviderType
 import com.greyrecon.app.ai.FindingTriage
-import com.greyrecon.app.engine.discovery.ActiveScanDiscoveryService
-import com.greyrecon.app.engine.discovery.ArpTableDiscoveryService
 import com.greyrecon.app.engine.discovery.DeviceClassifier
-import com.greyrecon.app.engine.discovery.DiscoveryEngine
-import com.greyrecon.app.engine.discovery.MdnsDiscoveryService
 import com.greyrecon.app.engine.discovery.SubnetInfo
-import com.greyrecon.app.engine.discovery.UpnpDiscoveryService
 import com.greyrecon.app.engine.discovery.VendorLookup
 import com.greyrecon.app.engine.cve.EpssClient
 import com.greyrecon.app.engine.cve.KevClient
@@ -28,6 +23,9 @@ import com.greyrecon.app.engine.shodan.ShodanClient
 import com.greyrecon.app.engine.snmp.SnmpClient
 import com.greyrecon.app.engine.snmp.SnmpCommunityWordlist
 import com.greyrecon.app.engine.wol.WakeOnLan
+import com.greyrecon.app.engine.discovery.NetworkIdentity
+import com.greyrecon.app.engine.discovery.NetworkScan
+import com.greyrecon.app.engine.scan.HttpBannerProbe
 import com.greyrecon.app.history.DeviceHistoryStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -35,6 +33,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 sealed class ScanState {
@@ -82,6 +82,16 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                     val reclassified = withPorts.copy(deviceType = DeviceClassifier.classify(withPorts))
                     discoveredDevices[ipAddress] = reclassified
                     reEmitCurrentState()
+
+                    // Now that the open ports are known, ask whatever is on the web port what it
+                    // is. "80/tcp open" helps nobody decide anything; "Synology DiskStation" does,
+                    // and it is what makes the CVE lookups targetable rather than generic.
+                    val banner = HttpBannerProbe.probe(ipAddress, ports.map { p -> p.number })
+                    if (banner != null) {
+                        discoveredDevices[ipAddress] = (discoveredDevices[ipAddress] ?: reclassified)
+                            .copy(httpBanner = banner)
+                        reEmitCurrentState()
+                    }
                 }
             } catch (e: Exception) {
                 updateActions(ipAddress) { it.copy(ports = ActionResult.Error(e.message ?: "Port scan failed")) }
@@ -298,33 +308,26 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val engine = DiscoveryEngine(
-            listOf(
-                ArpTableDiscoveryService(),
-                MdnsDiscoveryService(context),
-                UpnpDiscoveryService(context),
-                ActiveScanDiscoveryService(subnet),
-            )
-        )
+        val engine = NetworkScan.engineFor(context, subnet)
 
         discoveredDevices.clear()
         _state.value = ScanState.Scanning(emptyList())
 
         viewModelScope.launch {
             engine.discover().collect { device ->
-                val enriched = if (device.vendor == null && device.macAddress != null) {
-                    device.copy(vendor = vendorLookup.lookup(device.macAddress))
-                } else {
-                    device
-                }
-                val withGateway = enriched.copy(isGateway = enriched.ipAddress == subnet.gatewayAddress)
-                val classified = withGateway.copy(deviceType = DeviceClassifier.classify(withGateway))
+                val classified = NetworkScan.enrich(device, subnet, vendorLookup)
                 discoveredDevices[classified.ipAddress] = classified
                 _state.value = ScanState.Scanning(discoveredDevices.values.toList())
             }
             val finalDevices = discoveredDevices.values.toList()
             _state.value = ScanState.Done(finalDevices)
-            historyStore.recordScanResults(finalDevices)
+            // History is per-network; without an identity there is nothing safe to attribute this
+            // scan to, so skip recording rather than pooling it into another network's baseline.
+            val identity = withContext(Dispatchers.IO) { NetworkIdentity.resolve(context) }
+            if (identity != null) {
+                historyStore.registerNetwork(identity)
+                historyStore.recordScanResults(identity.key, finalDevices)
+            }
         }
     }
 }

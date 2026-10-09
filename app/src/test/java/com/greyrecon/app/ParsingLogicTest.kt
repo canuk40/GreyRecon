@@ -1,0 +1,171 @@
+package com.greyrecon.app
+
+import com.greyrecon.app.engine.discovery.MacAddressFacts
+import com.greyrecon.app.engine.discovery.MdnsTxtFacts
+import com.greyrecon.app.engine.wifi.Band
+import com.greyrecon.app.engine.wifi.Security
+import com.greyrecon.app.engine.tools.UpnpIgdClient
+import com.greyrecon.app.engine.wifi.WifiApScanner
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * Covers the pure parsing used by the new identification and WiFi features.
+ *
+ * These exist because the network the app was tested on could not exercise them: it is an
+ * isolated guest SSID, so there is no peer mDNS traffic and no visible peer MAC addresses. The
+ * device run proved the HTTP banner path and the whole WiFi analyzer; this proves the parsers
+ * those other paths feed, which is the part that would otherwise be asserted rather than shown.
+ */
+class ParsingLogicTest {
+
+    // ---------- mDNS TXT ----------
+
+    private fun txt(vararg pairs: Pair<String, String?>): Map<String, ByteArray?> =
+        pairs.associate { (k, v) -> k to v?.toByteArray() }
+
+    @Test
+    fun `model and firmware combine`() {
+        assertEquals("Hue Bridge (1.50.1951132110)", MdnsTxtFacts.describe(txt("md" to "Hue Bridge", "fv" to "1.50.1951132110")))
+    }
+
+    @Test
+    fun `model alone is enough`() {
+        assertEquals("Chromecast Ultra", MdnsTxtFacts.describe(txt("md" to "Chromecast Ultra")))
+    }
+
+    @Test
+    fun `firmware alone is not worth surfacing`() {
+        assertNull(MdnsTxtFacts.describe(txt("fv" to "1.2.3")))
+    }
+
+    @Test
+    fun `keys are matched case-insensitively`() {
+        assertEquals("HP LaserJet", MdnsTxtFacts.describe(txt("TY" to "HP LaserJet")))
+    }
+
+    @Test
+    fun `empty and null values are ignored`() {
+        assertNull(MdnsTxtFacts.describe(txt("md" to "", "fv" to null)))
+        assertNull(MdnsTxtFacts.describe(emptyMap()))
+    }
+
+    @Test
+    fun `control characters are refused rather than rendered`() {
+        assertNull(MdnsTxtFacts.describe(txt("md" to "bad\u0000value")))
+    }
+
+    @Test
+    fun `absurdly long values are refused`() {
+        assertNull(MdnsTxtFacts.describe(txt("md" to "x".repeat(200))))
+    }
+
+    @Test
+    fun `unknown keys are ignored rather than guessed at`() {
+        assertNull(MdnsTxtFacts.describe(txt("xyzzy" to "something", "rnd" to "42")))
+    }
+
+    // ---------- MAC facts ----------
+
+    @Test
+    fun `randomised MAC is detected via the locally administered bit`() {
+        // 0x02 set in the first octet
+        assertTrue(MacAddressFacts.isLocallyAdministered("02:1a:2b:3c:4d:5e"))
+        assertTrue(MacAddressFacts.isLocallyAdministered("DA:A1:19:00:00:01"))
+        assertTrue(MacAddressFacts.isLocallyAdministered("e6-63-da-34-00-73"))
+    }
+
+    @Test
+    fun `burned-in vendor MAC is not flagged`() {
+        assertFalse(MacAddressFacts.isLocallyAdministered("e0:63:da:34:00:73")) // Ubiquiti
+        assertFalse(MacAddressFacts.isLocallyAdministered("c8:78:7d:07:25:4d")) // D-Link
+        assertFalse(MacAddressFacts.isLocallyAdministered("60:22:32:a8:fb:a6"))
+    }
+
+    @Test
+    fun `malformed input never throws`() {
+        assertFalse(MacAddressFacts.isLocallyAdministered(null))
+        assertFalse(MacAddressFacts.isLocallyAdministered(""))
+        assertFalse(MacAddressFacts.isLocallyAdministered("z"))
+        assertFalse(MacAddressFacts.isLocallyAdministered("zz:zz:zz:zz:zz:zz"))
+    }
+
+    // ---------- WiFi security ----------
+
+    @Test
+    fun `WPA3 transition mode is not misreported as WPA2`() {
+        // A transition-mode AP advertises both PSK and SAE; SAE must win.
+        assertEquals(Security.WPA2_WPA3, WifiApScanner.securityFor("[RSN-PSK+SAE-CCMP][ESS][MFPC]"))
+    }
+
+    @Test
+    fun `pure WPA3 is detected`() {
+        assertEquals(Security.WPA3, WifiApScanner.securityFor("[RSN-SAE-CCMP][ESS][MFPR]"))
+    }
+
+    @Test
+    fun `real capability strings from the test network parse correctly`() {
+        assertEquals(Security.WPA2, WifiApScanner.securityFor("[WPA2-PSK-CCMP-128][RSN-PSK-CCMP-128][ESS][WPS][MFPC]"))
+        assertEquals(Security.OPEN, WifiApScanner.securityFor("[ESS]"))
+        assertEquals(Security.WPA2, WifiApScanner.securityFor("[WPA2-PSK+FT/PSK-CCMP-128][RSN-PSK+FT/PSK-CCMP-128][ESS][WPS]"))
+    }
+
+    @Test
+    fun `WEP and OWE are distinguished`() {
+        assertEquals(Security.WEP, WifiApScanner.securityFor("[WEP][ESS]"))
+        assertEquals(Security.OWE, WifiApScanner.securityFor("[RSN-OWE-CCMP][ESS]"))
+    }
+
+    @Test
+    fun `open is ranked weaker than everything else`() {
+        assertTrue(Security.OPEN.rank < Security.WEP.rank)
+        assertTrue(Security.WPA2.rank < Security.WPA3.rank)
+    }
+
+    // ---------- channel and band ----------
+
+    @Test
+    fun `channel numbers match the real frequencies seen on the test network`() {
+        assertEquals(6, WifiApScanner.channelFor(2437))
+        assertEquals(11, WifiApScanner.channelFor(2462))
+        assertEquals(1, WifiApScanner.channelFor(2412))
+        assertEquals(14, WifiApScanner.channelFor(2484)) // the 2.4GHz special case
+        assertEquals(44, WifiApScanner.channelFor(5220))
+    }
+
+    @Test
+    fun `bands are classified from frequency`() {
+        assertEquals(Band.GHZ_2_4, WifiApScanner.bandFor(2437))
+        assertEquals(Band.GHZ_5, WifiApScanner.bandFor(5220))
+        assertEquals(Band.GHZ_6, WifiApScanner.bandFor(6115))
+    }
+
+    // ---------- UPnP router UDN ----------
+
+    @Test
+    fun `UDN is extracted and the uuid prefix stripped`() {
+        val xml = """
+            <root xmlns="urn:schemas-upnp-org:device-1-0"><device>
+            <deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>
+            <UDN>uuid:9f3b2c10-aaaa-4bbb-8ccc-0123456789ab</UDN>
+            </device></root>
+        """
+        assertEquals("9f3b2c10-aaaa-4bbb-8ccc-0123456789ab", UpnpIgdClient.parseUdn(xml))
+    }
+
+    @Test
+    fun `namespaced UDN tags are handled`() {
+        assertEquals("abc-123", UpnpIgdClient.parseUdn("<u:UDN>uuid:abc-123</u:UDN>"))
+    }
+
+    @Test
+    fun `missing or empty UDN yields null rather than a bogus key`() {
+        assertNull(UpnpIgdClient.parseUdn("<root><device><friendlyName>x</friendlyName></device></root>"))
+        assertNull(UpnpIgdClient.parseUdn("<UDN></UDN>"))
+        assertNull(UpnpIgdClient.parseUdn("<UDN>uuid:</UDN>"))
+        assertNull(UpnpIgdClient.parseUdn(""))
+    }
+}

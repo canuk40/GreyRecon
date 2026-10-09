@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">GreyRecon</string>
+    <string name="wifi_analyzer">WiFi Analyzer</string>
+    <string name="connection_quality">Connection Quality</string>
+    <string name="tool_quality_desc">Latency, jitter and packet loss to your router and to the internet</string>
+    <string name="tool_wifi_desc">Nearby access points: channels, signal, security, and rogue access point detection</string>
     <string name="ai_assistant">AI Assistant</string>
     <string name="abuseipdb_key">AbuseIPDB API key (free -- required for IP abuse-reputation checks)</string>
     <string name="actions">Actions</string>

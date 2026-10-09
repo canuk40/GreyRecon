@@ -33,8 +33,8 @@ android {
         // path degrades to its existing `ip neigh show` shell-out and TCP-probe fallbacks at this
         // targetSdk rather than losing discovery outright -- see GreyRecon.md for the full tradeoff.
         targetSdk = 36
-        versionCode = 21
-        versionName = "0.8.9"
+        versionCode = 22
+        versionName = "0.9.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -103,6 +103,14 @@ android {
     }
 }
 
+ksp {
+    // Emit Room's expected schema JSON per version, and keep it in git. Destructive fallback is
+    // enabled on this database, so a migration that does not produce byte-identical schema does
+    // not throw -- it silently deletes the user's history instead. Having the expected schema
+    // checked in is what makes a hand-written migration verifiable rather than hopeful.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.core:core-ktx:1.13.1")
@@ -157,6 +165,7 @@ dependencies {
     // JitPack's build history for termux-app is genuinely unreliable for its native (ndk-build)
     // modules on many tags. Apache-2.0, carved out of termux-app's GPLv3 by its own LICENSE.md.
     implementation(project(":terminal-view"))
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")

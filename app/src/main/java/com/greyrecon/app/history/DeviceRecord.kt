@@ -13,7 +13,14 @@ import androidx.room.PrimaryKey
  */
 @Entity(tableName = "device_history")
 data class DeviceRecord(
+    /**
+     * Scoped identity: "<networkKey>|<mac-or-ip>". Scoping matters because the same MAC is a
+     * different thing to the user on a different network -- and more importantly an unscoped
+     * history makes every device at a second site look like an intruder at the first.
+     */
     @PrimaryKey val id: String,
+    /** Which network this record belongs to -- see [com.greyrecon.app.engine.discovery.NetworkIdentity]. */
+    val networkKey: String,
     val macAddress: String?,
     val lastKnownIp: String,
     val vendor: String?,

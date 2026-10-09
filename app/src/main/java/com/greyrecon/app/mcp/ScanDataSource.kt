@@ -2,15 +2,10 @@ package com.greyrecon.app.mcp
 
 import android.content.Context
 import com.greyrecon.app.data.SecureKeyStore
-import com.greyrecon.app.engine.discovery.ActiveScanDiscoveryService
-import com.greyrecon.app.engine.discovery.ArpTableDiscoveryService
 import com.greyrecon.app.engine.discovery.DeviceClassifier
-import com.greyrecon.app.engine.discovery.DiscoveryEngine
-import com.greyrecon.app.engine.discovery.MdnsDiscoveryService
 import com.greyrecon.app.engine.discovery.NetBiosClient
 import com.greyrecon.app.engine.discovery.NetBiosInfo
 import com.greyrecon.app.engine.discovery.SubnetInfo
-import com.greyrecon.app.engine.discovery.UpnpDiscoveryService
 import com.greyrecon.app.engine.discovery.VendorLookup
 import com.greyrecon.app.engine.cve.CveFinding
 import com.greyrecon.app.engine.cve.KevClient
@@ -52,6 +47,8 @@ import com.greyrecon.app.engine.tools.UpnpIgdClient
 import com.greyrecon.app.engine.tools.UpnpIgdResult
 import com.greyrecon.app.engine.tools.WhoisLookup
 import com.greyrecon.app.engine.wol.WakeOnLan
+import com.greyrecon.app.engine.discovery.NetworkIdentity
+import com.greyrecon.app.engine.discovery.NetworkScan
 import com.greyrecon.app.history.DeviceHistoryStore
 import java.net.URL
 import kotlinx.coroutines.flow.toList
@@ -78,29 +75,11 @@ class ScanDataSource(private val context: Context) {
     suspend fun scanNetwork(): List<Device> {
         val subnet = SubnetInfo.fromCurrentConnection(context) ?: return emptyList()
 
-        val engine = DiscoveryEngine(
-            listOf(
-                ArpTableDiscoveryService(),
-                MdnsDiscoveryService(context),
-                UpnpDiscoveryService(context),
-                ActiveScanDiscoveryService(subnet),
-            )
-        )
-
-        val found = LinkedHashMap<String, Device>()
-        engine.discover().collect { device ->
-            val enriched = if (device.vendor == null && device.macAddress != null) {
-                device.copy(vendor = vendorLookup.lookup(device.macAddress))
-            } else {
-                device
-            }
-            val withGateway = enriched.copy(isGateway = enriched.ipAddress == subnet.gatewayAddress)
-            val classified = withGateway.copy(deviceType = DeviceClassifier.classify(withGateway))
-            found[classified.ipAddress] = classified
+        lastScan = NetworkScan.run(context, vendorLookup)
+        NetworkIdentity.resolve(context)?.let { identity ->
+            historyStore.registerNetwork(identity)
+            historyStore.recordScanResults(identity.key, lastScan)
         }
-
-        lastScan = found.values.toList()
-        historyStore.recordScanResults(lastScan)
         return lastScan
     }
 

@@ -11,6 +11,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "network_events")
 data class NetworkEvent(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Which network this event happened on -- see [com.greyrecon.app.engine.discovery.NetworkIdentity]. */
+    val networkKey: String,
     val deviceId: String,
     val type: String,
     val timestamp: Long,
@@ -21,5 +23,8 @@ data class NetworkEvent(
         const val WENT_OFFLINE = "WENT_OFFLINE"
         const val IP_CHANGED = "IP_CHANGED"
         const val RECLASSIFIED = "RECLASSIFIED"
+
+        /** Emitted by the background watcher rather than a foreground scan. */
+        const val WATCH_ALERT = "WATCH_ALERT"
     }
 }

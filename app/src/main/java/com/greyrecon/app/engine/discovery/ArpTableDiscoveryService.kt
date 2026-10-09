@@ -36,9 +36,7 @@ class ArpTableDiscoveryService : DeviceDiscoveryService {
     override val method = DiscoveryMethod.ARP_TABLE
 
     override fun discover(): Flow<Device> = flow {
-        val nativeResult = NativeArpScanner.queryNeighborTable()
-        val entries = parseNativeOutput(nativeResult).ifEmpty { queryViaIpNeighShow() }
-        entries.forEach { (ip, mac) ->
+        neighborTable().forEach { (ip, mac) ->
             emit(
                 Device(
                     ipAddress = ip,
@@ -50,6 +48,17 @@ class ArpTableDiscoveryService : DeviceDiscoveryService {
             )
         }
     }.flowOn(Dispatchers.IO)
+
+    companion object {
+
+        /**
+         * The kernel's current IP -> MAC neighbour table, native netlink query first and a forked
+         * `ip neigh show` as the fallback. Exposed on the companion because [NetworkIdentity] needs
+         * the same data to fingerprint the current network by its gateway's MAC, and two
+         * implementations of this would drift.
+         */
+        fun neighborTable(): List<Pair<String, String>> =
+            parseNativeOutput(NativeArpScanner.queryNeighborTable()).ifEmpty { queryViaIpNeighShow() }
 
     private fun parseNativeOutput(raw: String): List<Pair<String, String>> =
         raw.lineSequence()
@@ -83,5 +92,6 @@ class ArpTableDiscoveryService : DeviceDiscoveryService {
         } catch (_: Exception) {
             emptyList()
         }
+    }
     }
 }
