@@ -3,6 +3,8 @@ package com.greyrecon.app.ui.tools
 import androidx.compose.ui.res.stringResource
 import com.greyrecon.app.R
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,7 +48,16 @@ fun SubnetCalculatorScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        // Scrollable for the same reason as ToolsScreen: a results block plus an on-screen
+        // keyboard easily exceeds a short screen, and a plain Column gives no way to reach what
+        // it clips.
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
             OutlinedTextField(
                 value = ip,
                 onValueChange = { ip = it },

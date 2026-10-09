@@ -3,6 +3,8 @@ package com.greyrecon.app.ui.tools
 import androidx.compose.ui.res.stringResource
 import com.greyrecon.app.R
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,7 +51,16 @@ fun ToolsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        // verticalScroll is load-bearing, not cosmetic: this list outgrew the screen when the
+        // WiFi Analyzer and Connection Quality entries were added, and a plain Column simply
+        // clips its overflow with no way to reach it. The last two tools were unreachable.
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
             ToolMenuItem(
                 icon = Icons.Filled.Calculate,
                 label = stringResource(R.string.subnet_calculator),
