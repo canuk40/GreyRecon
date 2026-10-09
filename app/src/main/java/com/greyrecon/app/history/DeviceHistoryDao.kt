@@ -32,4 +32,19 @@ interface DeviceHistoryDao {
 
     @Query("UPDATE device_history SET notes = :notes WHERE id = :id")
     suspend fun setNotes(id: String, notes: String?)
+
+    @Query("SELECT COUNT(*) FROM device_history WHERE networkKey = :networkKey")
+    suspend fun countForNetwork(networkKey: String): Int
+
+    /**
+     * Moves every row from one network key to another, rewriting the embedded key in the primary
+     * key as it goes (ids are "<networkKey>|<mac-or-ip>"). Callers must ensure the destination key
+     * has no rows, otherwise this collides on the primary key.
+     */
+    @Query(
+        "UPDATE device_history SET networkKey = :newKey, " +
+            "id = :newKey || '|' || substr(id, length(:oldKey) + 2) " +
+            "WHERE networkKey = :oldKey"
+    )
+    suspend fun repointNetwork(oldKey: String, newKey: String)
 }

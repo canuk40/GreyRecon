@@ -49,4 +49,7 @@ interface NetworkProfileDao {
 
     @Query("UPDATE network_profiles SET watchEnabled = :enabled WHERE networkKey = :key")
     suspend fun setWatchEnabled(key: String, enabled: Boolean)
+
+    @Query("DELETE FROM network_profiles WHERE networkKey = :key")
+    suspend fun delete(key: String)
 }

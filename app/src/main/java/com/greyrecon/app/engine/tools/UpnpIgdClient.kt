@@ -78,13 +78,35 @@ class UpnpIgdClient(private val context: Context) {
     }
 
     /** SSDP M-SEARCH specifically for the IGD, returning its device-description LOCATION URL. */
-    private fun discoverIgdLocation(): String? {
+    /**
+     * The router's UPnP UDN -- a stable, globally-unique identifier the gateway assigns itself
+     * and keeps across reboots and IP changes.
+     *
+     * Exists for [com.greyrecon.app.engine.discovery.NetworkIdentity], which needs to tell one
+     * network from another without a location permission. Its first choice is the gateway's MAC,
+     * but on modern Android the kernel neighbour table is frequently unreadable by apps (SELinux
+     * blocks the netlink query; /proc/net/arp is denied), so that path yields nothing on a lot of
+     * real devices -- confirmed on the primary test phone. The UDN is the next best thing: it is
+     * unique per router, needs no permission, and is fetched over plain HTTP from the gateway.
+     *
+     * Uses a shorter SSDP window than [audit] because this sits in the path of every scan and
+     * every background watch cycle, where two seconds of waiting is a cost and the fallback is
+     * merely less precise rather than broken.
+     */
+    suspend fun routerUdn(windowMs: Int = FAST_SSDP_WINDOW_MS): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val location = discoverIgdLocation(windowMs) ?: return@runCatching null
+            parseUdn(httpGet(location))
+        }.getOrNull()
+    }
+
+    private fun discoverIgdLocation(windowMs: Int = SSDP_WINDOW_MS): String? {
         val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val lock = wifiManager.createMulticastLock("greyrecon-igd")
         lock.acquire()
         try {
             MulticastSocket().use { socket ->
-                socket.soTimeout = SSDP_WINDOW_MS
+                socket.soTimeout = windowMs
                 val group = InetAddress.getByName("239.255.255.250")
                 val search = (
                     "M-SEARCH * HTTP/1.1\r\n" +
@@ -95,7 +117,7 @@ class UpnpIgdClient(private val context: Context) {
                     ).toByteArray()
                 socket.send(DatagramPacket(search, search.size, group, 1900))
 
-                val deadline = System.currentTimeMillis() + SSDP_WINDOW_MS
+                val deadline = System.currentTimeMillis() + windowMs
                 val buffer = ByteArray(2048)
                 while (System.currentTimeMillis() < deadline) {
                     try {
@@ -165,7 +187,21 @@ class UpnpIgdClient(private val context: Context) {
             .find(xml)?.groupValues?.get(1)?.trim()
 
     companion object {
+        /**
+         * Pulls the UDN out of a UPnP device description. Separate and visible so it can be
+         * tested without a router: the SSDP round trip needs multicast, which plenty of networks
+         * (including isolated guest SSIDs) simply do not forward.
+         */
+        fun parseUdn(descriptionXml: String): String? =
+            Regex("""<(?:[\w-]+:)?UDN>(.*?)</(?:[\w-]+:)?UDN>""", RegexOption.DOT_MATCHES_ALL)
+                .find(descriptionXml)?.groupValues?.get(1)
+                ?.trim()
+                ?.removePrefix("uuid:")
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+
         private const val SSDP_WINDOW_MS = 3_000
+        private const val FAST_SSDP_WINDOW_MS = 1_500
         private const val MAX_MAPPINGS = 60
         private val client = OkHttpClient.Builder()
             .connectTimeout(8, TimeUnit.SECONDS)

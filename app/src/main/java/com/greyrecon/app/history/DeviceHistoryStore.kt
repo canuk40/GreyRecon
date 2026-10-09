@@ -34,6 +34,7 @@ class DeviceHistoryStore(context: Context) {
      */
     suspend fun registerNetwork(identity: NetworkIdentity): NetworkProfile {
         val now = System.currentTimeMillis()
+        adoptWeakProfileIfUpgraded(identity)
         val existing = profileDao.getByKey(identity.key)
         if (existing != null) {
             profileDao.touch(identity.key, now)
@@ -49,6 +50,34 @@ class DeviceHistoryStore(context: Context) {
         )
         profileDao.upsert(created)
         return created
+    }
+
+    /**
+     * Carries a network's history forward when its key gets *better*.
+     *
+     * [NetworkIdentity] falls back to a gateway-IP key when it can read neither the neighbour
+     * table nor the router's UPnP description. Either can start working later -- UPnP gets
+     * switched on, the user changes ROM, the router is replaced -- and the key then changes from
+     * `net:192.168.3.1/24` to a strong one. Without this, that silently orphans the entire
+     * baseline: the History screen goes empty and the next background scan reports every device
+     * in the house as a new arrival. That flood is precisely the failure per-network scoping
+     * exists to prevent, so the upgrade must not cause it.
+     *
+     * Only runs in the safe direction and only when unambiguous: the new key must be strong, the
+     * old one must be the weak key for this same gateway, and the destination must have no rows
+     * of its own. Where both already hold data this does nothing rather than attempting a merge,
+     * because silently combining two networks' histories is worse than leaving two profiles.
+     */
+    private suspend fun adoptWeakProfileIfUpgraded(identity: NetworkIdentity) {
+        if (!identity.isStrong) return
+        val weakKey = identity.weakKeyForSameGateway ?: return
+        if (weakKey == identity.key) return
+        if (profileDao.getByKey(weakKey) == null) return
+        if (dao.countForNetwork(identity.key) > 0) return
+
+        dao.repointNetwork(oldKey = weakKey, newKey = identity.key)
+        eventDao.repointNetwork(oldKey = weakKey, newKey = identity.key)
+        profileDao.delete(weakKey)
     }
 
     suspend fun setNetworkLabel(key: String, label: String) = profileDao.setLabel(key, label)
